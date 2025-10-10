@@ -9,6 +9,18 @@ export default function CommissionModal({ isOpen, onClose, commissionRecord: see
 
   if (!isOpen) return null;
 
+  if (showTRID && record) {
+    return (
+      <CommissionTRIDModal
+        record={record}
+        onClose={() => {
+          setShowTRID(false);
+          onClose?.();
+        }}
+      />
+    );
+  }
+
   return (
     <>
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">

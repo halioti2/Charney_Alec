@@ -55,7 +55,7 @@ All derived values (GCI, agent net, cap progress) come from `calculateCommission
 - `EmailChain` (renders evidence snippets).
 - `CommissionCalculationForm` (controlled inputs + breakdown, leverages `calculateCommission`, supports history two-column card layout).
    - `CommissionActions` (Approve/Request/Flag buttons).
-   - `CommissionTRIDView` (printable document component).
+- `CommissionTRIDView` (printable document component – see `docs/trid-modal-checklist.md`).
    - `NotificationToast` (reuse global toast context once built).
 
 3. **State Management**

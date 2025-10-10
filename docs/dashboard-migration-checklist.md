@@ -28,7 +28,7 @@ Use this checklist to migrate the legacy DOM-driven dashboard into idiomatic Rea
   - [X] Wrap “Weekly Volume” chart in the shared chart component.
   - [X] Tests: RTL tests validating coordinator metrics, queue interactions, and chart rendering.
 
-- [ ] **Commission Modal & Detail** (see `docs/commission-modal-plan.md`)
+- [ ] **Commission Modal & Detail** (see `docs/commission-modal-plan.md` & `docs/trid-modal-checklist.md`)
   - [X] Define a `CommissionRecord` data loader that joins transactions, agents, brokerages, evidence (mock for now).
   - [X] Build React replacements: modal shell, email chain, calculation form, action buttons, TRID view.
   - [X] Add toast/notification hooks for modal actions.
@@ -39,13 +39,6 @@ Use this checklist to migrate the legacy DOM-driven dashboard into idiomatic Rea
   - [ ] Design and add a `transaction_events` table (type, actor, metadata) to Supabase during integration.
   - [ ] Seed mock events until backend writes are wired.
   - [ ] Surface events in broker panel audit trail.
-
-- [ ] **Commission Modal**
-  - [ ] Model modal visibility and active commission in React state.
-  - [ ] Recreate email chain, calculation inputs, and action buttons as controlled components.
-  - [ ] Derive commission figures via pure functions (shared util) and memoized selectors.
-  - [ ] Implement TRID disclosure view as a printable React component.
-  - [ ] Tests: Unit tests for commission math; modal interaction tests covering approve/request/flag actions.
 
 - [ ] **Broker Detail Panel**
   - [ ] Convert sliding panel to a React component using portal + animation library or CSS transitions.

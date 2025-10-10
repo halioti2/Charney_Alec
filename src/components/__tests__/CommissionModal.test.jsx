@@ -62,6 +62,6 @@ describe('CommissionModal', () => {
   it('shows TRID view when requested', () => {
     renderModal();
     fireEvent.click(screen.getByText(/Generate Disclosure/i));
-    expect(screen.getByText(/Estimated Closing Disclosure/i)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Disclosure Agreement/i })).toBeInTheDocument();
   });
 });
