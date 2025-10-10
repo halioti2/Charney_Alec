@@ -1,0 +1,264 @@
+:root {
+  --charney-red: #FF5959;
+  --charney-black: #000000;
+  --charney-cream: #F6F1EB;
+  --charney-white: #FFFFFF;
+  --charney-gray: #666666;
+  --charney-light-gray: #E5E5E5;
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+html.dark {
+  --charney-black: #F6F1EB;
+  --charney-cream: #1a1a1a;
+  --charney-white: #2a2a2a;
+  --charney-gray: #999999;
+  --charney-light-gray: #444444;
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.text-charney-red {
+  color: var(--charney-red);
+}
+
+.bg-charney-red {
+  background-color: var(--charney-red);
+}
+
+.header {
+  background-color: var(--charney-cream);
+  border-bottom: 6px solid var(--charney-red);
+}
+
+.card {
+  background-color: var(--charney-white);
+  border-radius: 12px;
+  box-shadow: var(--shadow-md);
+}
+
+.key-metric-card {
+  border-top: 6px solid var(--charney-red);
+}
+
+.btn {
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 12px 28px;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-block;
+  text-decoration: none;
+}
+
+.btn-primary {
+  background: var(--charney-red);
+  color: var(--charney-white);
+}
+
+html.dark .btn-primary {
+  color: #000;
+}
+
+.btn-primary:hover {
+  background: #E54545;
+  transform: translateY(-1px);
+}
+
+.btn-outline {
+  background: transparent;
+  color: var(--charney-black);
+  border: 3px solid var(--charney-black);
+}
+
+.btn-outline:hover {
+  background: var(--charney-black);
+  color: var(--charney-white);
+}
+
+html.dark .btn-outline:hover {
+  color: var(--charney-cream);
+  background: var(--charney-light-gray);
+}
+
+.view-toggle button.active {
+  color: var(--charney-red);
+}
+
+.panel,
+.modal-content,
+#trid-modal {
+  background-color: var(--charney-white);
+  color: var(--charney-black);
+}
+
+.panel {
+  transform: translateX(100%);
+  transition: transform 0.3s ease-in-out;
+}
+
+.panel.is-open {
+  transform: translateX(0);
+}
+
+.panel-overlay {
+  transition: opacity 0.3s ease-in-out;
+}
+
+.log-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease-in-out;
+}
+
+.log-item.expanded .log-body {
+  max-height: 500px;
+}
+
+.log-header .arrow {
+  transition: transform 0.3s ease-in-out;
+}
+
+.log-item.expanded .arrow {
+  transform: rotate(90deg);
+}
+
+.panel-nav button.active {
+  border-bottom-color: var(--charney-red);
+}
+
+table thead th {
+  background-color: var(--charney-black);
+  color: var(--charney-white);
+  font-size: 14px;
+  letter-spacing: 1px;
+}
+
+html.dark table thead th {
+  background-color: var(--charney-light-gray);
+  color: var(--charney-cream);
+}
+
+table td {
+  border-bottom: 1px solid var(--charney-light-gray);
+}
+
+tr:last-child td {
+  border-bottom: none;
+}
+
+.form-input {
+  width: 100%;
+  background-color: var(--charney-cream);
+  border: 2px solid var(--charney-light-gray);
+  border-radius: 4px;
+  padding: 8px 12px;
+  font-size: 1rem;
+  color: var(--charney-black);
+  transition: border-color 0.2s ease;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: var(--charney-red);
+}
+
+html.dark .form-input {
+  background-color: #333;
+  border-color: #555;
+  color: var(--charney-black);
+}
+
+.form-label {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--charney-gray);
+  margin-bottom: 4px;
+  display: block;
+}
+
+#stock-ticker-container {
+  -webkit-mask-image: linear-gradient(
+    to right,
+    rgba(0, 0, 0, 0),
+    rgba(0, 0, 0, 1) 10%,
+    rgba(0, 0, 0, 1) 90%,
+    rgba(0, 0, 0, 0)
+  );
+  mask-image: linear-gradient(
+    to right,
+    rgba(0, 0, 0, 0),
+    rgba(0, 0, 0, 1) 10%,
+    rgba(0, 0, 0, 1) 90%,
+    rgba(0, 0, 0, 0)
+  );
+}
+
+#stock-ticker-track {
+  white-space: nowrap;
+  will-change: transform;
+  animation: scroll 40s linear infinite;
+}
+
+@keyframes scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.ticker-item {
+  display: inline-block;
+  padding: 0 1.5rem;
+  font-size: 1rem;
+  font-weight: bold;
+}
+
+.ticker-up {
+  color: #16a34a;
+}
+
+.ticker-down {
+  color: #dc2626;
+}
+
+.market-alert {
+  transition: opacity 0.3s ease;
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  #trid-form-printable,
+  #trid-form-printable * {
+    visibility: visible;
+  }
+
+  #trid-form-printable {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+
+  .no-print {
+    display: none;
+  }
+
+  input {
+    border: none !important;
+    -webkit-appearance: none;
+    background: transparent !important;
+    color: black !important;
+    font-size: 1rem;
+  }
+}
