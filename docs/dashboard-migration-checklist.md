@@ -34,11 +34,18 @@ Use this checklist to migrate the legacy DOM-driven dashboard into idiomatic Rea
   - [X] Add toast/notification hooks for modal actions.
   - [X] Verify printable TRID content and send/share workflow parity.
   - [X] Tests: commission math unit tests (existing), modal interaction tests, TRID snapshot/print verification.
+  - [X] Mirror TRID modal layout, typography, and footer actions exactly as rendered in `test.html` (header treatment, loan/closing cost tables, signature block, print button).
+  - [X] Validate email chain and audit trail components match `test.html` structure (actor labels, timestamps, attachment styling, expand/collapse interactions).
+  - [X] Translate legacy modal/TRID styles into Tailwind utilities (document Charney color/typography tokens, include fallback guidance for designer handoff).
+  - [X] Capture Supabase/Netlify dependencies for commission actions; keep UI handlers stubbed until RPC endpoints for approve/request/flag are ready (document expected payloads before integration).
 
-- [ ] **Audit Trail / Transaction Events**
+- [ ] **Audit Trail / Transaction Events** (see `docs/audit-trail-plan.md`)
   - [ ] Design and add a `transaction_events` table (type, actor, metadata) to Supabase during integration.
+  - [ ] Create Netlify function / Supabase RPC contract for writing audit trail entries from modal actions.
+  - [ ] Build React audit trail list component with grouping + expand/collapse parity for broker panel.
+  - [ ] Replace legacy broker panel history DOM with React implementation using new component.
   - [ ] Seed mock events until backend writes are wired.
-  - [ ] Surface events in broker panel audit trail.
+  - [ ] Tests: render audit trail list with grouped events; verify expand/collapse + timestamp formatting.
 
 - [ ] **Broker Detail Panel**
   - [ ] Convert sliding panel to a React component using portal + animation library or CSS transitions.

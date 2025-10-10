@@ -43,6 +43,8 @@ describe('CommissionModal', () => {
     expect(screen.getByText(/Commission Detail/i)).toBeInTheDocument();
     expect(screen.getByText(/123 Main St/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Sale Price/i)).toHaveValue(mockRecord.salePrice);
+    expect(screen.getByText(/Audit Trail/i)).toBeInTheDocument();
+    expect(screen.getByText(/Coordinator/i)).toBeInTheDocument();
   });
 
   it('allows typing in calculation inputs without losing focus', () => {
@@ -63,5 +65,30 @@ describe('CommissionModal', () => {
     renderModal();
     fireEvent.click(screen.getByText(/Generate Disclosure/i));
     expect(screen.getByRole('heading', { name: /Disclosure Agreement/i })).toBeInTheDocument();
+    expect(screen.getByText(/Cash to Close from Borrower/i)).toBeInTheDocument();
+    expect(screen.getByText(/^Borrower Signature$/i)).toBeInTheDocument();
+    const scrollContainer = screen.getByTestId('trid-scroll-container');
+    expect(scrollContainer).toHaveStyle({ maxHeight: 'calc(100vh - 5rem)' });
+  });
+
+  it('can toggle open state without hook-order failures', () => {
+    const { rerender } = render(
+      <DashboardProvider initialState={{}}>
+        <CommissionModal isOpen={false} onClose={vi.fn()} commissionRecord={mockRecord} onAction={vi.fn()} />
+      </DashboardProvider>,
+    );
+
+    expect(() => {
+      rerender(
+        <DashboardProvider initialState={{}}>
+          <CommissionModal isOpen commissionRecord={mockRecord} onClose={vi.fn()} onAction={vi.fn()} />
+        </DashboardProvider>,
+      );
+      rerender(
+        <DashboardProvider initialState={{}}>
+          <CommissionModal isOpen={false} commissionRecord={mockRecord} onClose={vi.fn()} onAction={vi.fn()} />
+        </DashboardProvider>,
+      );
+    }).not.toThrow();
   });
 });

@@ -63,12 +63,25 @@ All derived values (GCI, agent net, cap progress) come from `calculateCommission
    - Keep calculation form state local but derive defaults from `CommissionRecord`.
    - Provide handlers: `approveCommission`, `requestInfo`, `flagConflict`, `generateDisclosure` (mock for now, future RPC integration).
 
+### Supabase / Netlify Integration Notes
+
+- Frontend handlers should eventually call Netlify functions that proxy Supabase RPCs:
+  - `POST /functions/commission-approve` → `{ commissionId: string, approvedBy: string, notes?: string }`
+  - `POST /functions/commission-request-info` → `{ commissionId: string, requestedBy: string, message: string }`
+  - `POST /functions/commission-flag` → `{ commissionId: string, flaggedBy: string, reason: string }`
+- Each function is expected to:
+  - Write a `transaction_events` record capturing the action, actor, and payload.
+  - Update `transactions.status` atomically (e.g., `approved`, `needs_info`, `flagged`).
+  - Return `{ success: boolean, status: string, eventId: string }` so the UI can reconcile toast messaging.
+- Until those endpoints exist, the React handlers remain mocked but log the payload shape for easy substitution.
+
 4. **Testing**
    - Unit: `calculateCommission` (existing) + new edge cases if needed.
    - Component: 
      - Modal opens with seeded data.
      - Inputs update derived values.
      - Action buttons trigger toasts (mock functions).
+      - Regression: toggling modal open/closed does not trigger hook-order warnings (Vitest coverage added).
    - Snapshot/print test for TRID component (ensure stable structure).
 
 5. **Cleanup**

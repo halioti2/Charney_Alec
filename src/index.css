@@ -13,3 +13,27 @@ body {
   color: #000000;
   -webkit-font-smoothing: antialiased;
 }
+
+@media print {
+  body {
+    background-color: #ffffff;
+    color: #000000;
+  }
+
+  body * {
+    visibility: hidden;
+  }
+
+  #trid-form-printable,
+  #trid-form-printable * {
+    visibility: visible;
+  }
+
+  #trid-form-printable {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+}
