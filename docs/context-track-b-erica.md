@@ -28,7 +28,9 @@
 3. Implement reusable `SchedulePayoutModal` + success toast integration (hook into Toast context).  
 4. Handle edge cases from journey: missing bank info flag, zero-selection guard, failure banner placeholder.  
 5. Provide mock data provider (`paymentsMockService.ts`) with same shape as Supabase API.  
-6. Add tests covering selection logic, modal state, toast trigger, ACH toggle behaviour.
+6. Add tests covering selection logic, modal state, toast trigger, ACH toggle behaviour.  
+7. Register a dedicated "Payments" tab/route in the dashboard header; payments components should only render when that tab is active to prevent leaking state into Broker/Coordinator views.
+   - Use active view key: `payments`.
 
 ## LLM Usage Notes
 - Paste branch + do/don’t list up front.  

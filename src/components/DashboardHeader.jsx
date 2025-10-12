@@ -35,25 +35,27 @@ export default function DashboardHeader() {
           Clar<span className="text-charney-red">i</span>ty
         </h1>
       </div>
-      <div className="view-toggle flex items-center space-x-2">
-        <button
-          type="button"
-          className={`text-sm font-bold uppercase transition ${activeView === 'broker' ? 'active text-charney-red' : ''}`}
-          onClick={() => switchView('broker')}
-        >
-          Broker
-        </button>
-        <span className="text-charney-gray">/</span>
-        <button
-          type="button"
-          className={`text-sm font-bold uppercase transition ${
-            activeView === 'coordinator' ? 'active text-charney-red' : ''
-          }`}
-          onClick={() => switchView('coordinator')}
-        >
-          Coordinator
-        </button>
-      </div>
+      <nav className="view-toggle flex items-center space-x-2">
+        {[
+          { id: 'broker', label: 'Broker' },
+          { id: 'coordinator', label: 'Coordinator' },
+          { id: 'payments', label: 'Payments' },
+          { id: 'commission', label: 'Commission Tracker' },
+        ].map((view, index, arr) => (
+          <div key={view.id} className="flex items-center space-x-2">
+            <button
+              type="button"
+              className={`text-sm font-bold uppercase transition ${
+                activeView === view.id ? 'active text-charney-red' : ''
+              }`}
+              onClick={() => switchView(view.id)}
+            >
+              {view.label}
+            </button>
+            {index < arr.length - 1 ? <span className="text-charney-gray">/</span> : null}
+          </div>
+        ))}
+      </nav>
       <div className="flex items-center space-x-4">
         <button
           type="button"

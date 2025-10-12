@@ -28,7 +28,9 @@
 3. Add drill-down view `/commissions/agent/:id` with deal list, adjustments, inactive flag.  
 4. Surface data freshness banner + loader for large ranges; include stalled stage markers using `deal_stage_snapshots`.  
 5. Provide mock data service matching Supabase agent metrics schema.  
-6. Add RTL snapshot tests for table sorting, detail navigation, empty states.
+6. Add RTL snapshot tests for table sorting, detail navigation, empty states.  
+7. Introduce a top-level "Commission Tracker" tab/route in the dashboard header and scope all commission state/providers to that tab so modifications cannot affect Broker/Coordinator/Payments views.
+   - Use active view key: `commission`.
 
 ## LLM Usage Notes
 - Start each prompt with branch and directories allowed.  

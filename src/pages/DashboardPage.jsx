@@ -2,6 +2,8 @@ import './dashboard.css';
 import DashboardHeader from '../components/DashboardHeader.jsx';
 import BrokerView from '../components/BrokerView.jsx';
 import CoordinatorView from '../components/CoordinatorView.jsx';
+import PaymentsView from '../components/PaymentsView.jsx';
+import CommissionTrackerView from '../components/CommissionTrackerView.jsx';
 import CommissionModal from '../components/CommissionModal.jsx';
 import ToastContainer from '../components/ToastContainer.jsx';
 import BrokerDetailPanel from '../components/BrokerDetailPanel.jsx';
@@ -27,6 +29,8 @@ export default function DashboardPage() {
       <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
         <BrokerView hidden={activeView !== 'broker'} />
         <CoordinatorView hidden={activeView !== 'coordinator'} />
+        <PaymentsView hidden={activeView !== 'payments'} />
+        <CommissionTrackerView hidden={activeView !== 'commission'} />
       </main>
       <CommissionModal
         isOpen={Boolean(activeCommission) && modalFocus !== 'audit'}

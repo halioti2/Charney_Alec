@@ -29,9 +29,11 @@ This plan splits work across three tracks:
   - Deliverable: PDF audit UI scaffold that matches the PDF journey.
 - **Track B (Erica)**  
   - Implement static Payments dashboard (payout queue table with checkboxes, running total summary, confirmation modal, success toast, payment history tab, ACH toggle state).  
+  - Add a top-level "Payments" tab alongside Broker/Coordinator within `DashboardHeader`, ensuring routes/state are scoped to the tab.  
   - Deliverable: static Payments UI ready for wiring.
 - **Track C (Rad)**  
   - Construct static Commission visualization screens (date-range selector, sortable Agent Performance table, drill-down detail view, no-data states, data freshness banner).  
+  - Add a top-level "Commission Tracker" tab; isolate components so the tab owns its own state providers and does not interfere with other views.  
   - Deliverable: static Commission dashboards ready for data binding.
 - **Ethan (backend prep)**  
   - Draft PDF workflow technical plan (OCR choice, n8n steps) and define golden-document test suite with logging sheet.  
