@@ -6,13 +6,25 @@ import {
 } from '../features/payments/components';
 
 export default function PaymentsView({ hidden }) {
-  // Mock failure data for demonstration
+  // Mock failure data for demonstration - Realistic brokerage scenarios
   const mockFailures = [
     {
       id: 'payout-004',
       agent: { full_name: 'Sarah Martinez' },
-      failure_reason: 'Insufficient funds in agent account',
+      failure_reason: 'Agent bank account closed or invalid',
       ach_provider: 'stripe'
+    },
+    {
+      id: 'payout-005',
+      agent: { full_name: 'Michael Thompson' },
+      failure_reason: 'Brokerage account daily transfer limit exceeded',
+      ach_provider: 'stripe'
+    },
+    {
+      id: 'payout-006',
+      agent: { full_name: 'Lisa Rodriguez' },
+      failure_reason: 'Check processing error - invalid mailing address',
+      ach_provider: null
     }
   ];
 
