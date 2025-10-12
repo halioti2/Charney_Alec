@@ -8,9 +8,13 @@ export default function PayoutQueue() {
   const [showModal, setShowModal] = useState(false);
   const { pushToast } = useToast();
 
-  // Filter to only show items ready for payout with bank info
+  // Filter to only show items ready for payout with valid conditions
   const payoutItems = useMemo(() =>
-    paymentQueueMock.filter(item => item.status === 'ready' && item.bank_account !== null),
+    paymentQueueMock.filter(item =>
+      item.status === 'ready' &&
+      item.bank_account !== null &&
+      item.payout_amount > 0  // Exclude zero or negative amounts
+    ),
     []
   );
 
@@ -49,10 +53,23 @@ export default function PayoutQueue() {
   };
 
   const handleSchedulePayout = () => {
+    // Enhanced zero-selection guard
     if (selectedItems.size === 0) {
       pushToast({
         message: "Please select at least one transaction to schedule a payout.",
         type: "warning"
+      });
+      return;
+    }
+
+    // Additional validation: check for valid amounts
+    const selectedItemsData = payoutItems.filter(item => selectedItems.has(item.id));
+    const invalidItems = selectedItemsData.filter(item => item.payout_amount <= 0);
+
+    if (invalidItems.length > 0) {
+      pushToast({
+        message: `Cannot schedule payout: ${invalidItems.length} transaction${invalidItems.length !== 1 ? 's have' : ' has'} invalid amount${invalidItems.length !== 1 ? 's' : ''}.`,
+        type: "error"
       });
       return;
     }

@@ -1,6 +1,31 @@
-import { PayoutQueue, PaymentHistory } from '../features/payments/components';
+import {
+  PayoutQueue,
+  PaymentHistory,
+  PayoutFailureBanner,
+  RequiresAttentionQueue
+} from '../features/payments/components';
 
 export default function PaymentsView({ hidden }) {
+  // Mock failure data for demonstration
+  const mockFailures = [
+    {
+      id: 'payout-004',
+      agent: { full_name: 'Sarah Martinez' },
+      failure_reason: 'Insufficient funds in agent account',
+      ach_provider: 'stripe'
+    }
+  ];
+
+  const handleRetryFailures = (failures) => {
+    console.log('Retrying failures:', failures);
+    // TODO: Implement retry logic
+  };
+
+  const handleDismissFailures = (failureIds) => {
+    console.log('Dismissing failures:', failureIds);
+    // TODO: Implement dismiss logic
+  };
+
   return (
     <section
       id="payments-view"
@@ -16,14 +41,21 @@ export default function PaymentsView({ hidden }) {
         </p>
       </header>
 
-      {/* Payout Queue Component */}
+      {/* Failure Banner */}
+      <PayoutFailureBanner
+        failures={mockFailures}
+        onRetry={handleRetryFailures}
+        onDismiss={handleDismissFailures}
+      />
+
+      {/* Requires Attention Queue */}
+      <RequiresAttentionQueue />
+
+      {/* Main Payout Queue */}
       <PayoutQueue />
 
-      {/* Payment History Component */}
+      {/* Payment History */}
       <PaymentHistory />
-
-      {/* TODO: Add other payment components */}
-      {/* <SchedulePayoutModal /> */}
     </section>
   );
 }

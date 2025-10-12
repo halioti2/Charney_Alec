@@ -75,6 +75,19 @@ export const agentsMock: Agent[] = [
     email: 'emily.white@charney.com',
     default_bank_account_id: 'bank-003',
   },
+  // Edge case agents
+  {
+    id: 'agent-006',
+    full_name: 'David Chen',
+    email: 'david.chen@charney.com',
+    default_bank_account_id: null, // Missing bank info
+  },
+  {
+    id: 'agent-007',
+    full_name: 'Sarah Martinez',
+    email: 'sarah.martinez@charney.com',
+    default_bank_account_id: 'bank-007',
+  },
 ];
 
 // Mock Transactions
@@ -97,6 +110,19 @@ export const transactionsMock: Transaction[] = [
     pending_payout_amount: 72500,
     latest_payout_id: null,
   },
+  // Edge case transactions
+  {
+    id: 'txn-006',
+    property_address: '789 Broadway, Suite 15',
+    pending_payout_amount: 0, // Zero amount
+    latest_payout_id: null,
+  },
+  {
+    id: 'txn-007',
+    property_address: '456 Park Ave, Floor 20',
+    pending_payout_amount: 25000,
+    latest_payout_id: 'payout-004',
+  },
 ];
 
 // Mock Bank Accounts
@@ -113,6 +139,14 @@ export const bankAccountsMock: PayoutBankAccount[] = [
     agent_id: 'agent-003',
     account_nickname: 'Wells Fargo Savings',
     mask: '****5678',
+    is_default: true,
+  },
+  // Edge case bank account
+  {
+    id: 'bank-007',
+    agent_id: 'agent-007',
+    account_nickname: 'Citibank Checking',
+    mask: '****9999',
     is_default: true,
   },
 ];
@@ -148,6 +182,38 @@ export const commissionPayoutsMock: CommissionPayout[] = [
     paid_at: null,
     failure_reason: null,
     created_at: '2024-10-09T09:15:00Z',
+  },
+  // Edge case: Zero payout amount (should be filtered out)
+  {
+    id: 'payout-003',
+    transaction_id: 'txn-006',
+    agent_id: 'agent-006',
+    batch_id: null,
+    payout_amount: 0,
+    status: 'ready',
+    auto_ach: false,
+    ach_provider: null,
+    ach_reference: null,
+    scheduled_at: null,
+    paid_at: null,
+    failure_reason: null,
+    created_at: '2024-10-10T11:30:00Z',
+  },
+  // Edge case: Failed payout
+  {
+    id: 'payout-004',
+    transaction_id: 'txn-007',
+    agent_id: 'agent-007',
+    batch_id: 'batch-003',
+    payout_amount: 25000,
+    status: 'failed',
+    auto_ach: true,
+    ach_provider: 'stripe',
+    ach_reference: null,
+    scheduled_at: '2024-10-10T14:00:00Z',
+    paid_at: null,
+    failure_reason: 'Insufficient funds in agent account',
+    created_at: '2024-10-10T12:00:00Z',
   },
 ];
 
