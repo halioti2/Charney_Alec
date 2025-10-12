@@ -8,9 +8,9 @@ export default function PayoutQueue() {
   const [showModal, setShowModal] = useState(false);
   const { pushToast } = useToast();
 
-  // Filter to only show items ready for payout
+  // Filter to only show items ready for payout with bank info
   const payoutItems = useMemo(() =>
-    paymentQueueMock.filter(item => item.status === 'ready' && item.hasBankInfo),
+    paymentQueueMock.filter(item => item.status === 'ready' && item.bank_account !== null),
     []
   );
 
@@ -18,7 +18,7 @@ export default function PayoutQueue() {
   const totalPayout = useMemo(() =>
     payoutItems
       .filter(item => selectedItems.has(item.id))
-      .reduce((sum, item) => sum + item.netPayout, 0),
+      .reduce((sum, item) => sum + item.payout_amount, 0),
     [selectedItems, payoutItems]
   );
 
@@ -153,7 +153,7 @@ export default function PayoutQueue() {
                   Net Payout
                 </th>
                 <th className="px-4 py-3 text-left text-sm font-medium text-charney-black dark:text-charney-white">
-                  Approval Date
+                  Created Date
                 </th>
                 <th className="px-4 py-3 text-center text-sm font-medium text-charney-black dark:text-charney-white">
                   ACH Ready
@@ -177,21 +177,21 @@ export default function PayoutQueue() {
                     />
                   </td>
                   <td className="px-4 py-3 text-sm font-medium text-charney-black dark:text-charney-white">
-                    {item.agentName}
+                    {item.agent.full_name}
                   </td>
                   <td className="px-4 py-3 text-sm text-charney-gray">
-                    {item.propertyAddress}
+                    {item.transaction.property_address}
                   </td>
                   <td className="px-4 py-3 text-sm font-semibold text-right text-charney-black dark:text-charney-white">
-                    {formatCurrency(item.netPayout)}
+                    {formatCurrency(item.payout_amount)}
                   </td>
                   <td className="px-4 py-3 text-sm text-charney-gray">
-                    {formatDate(item.brokerApprovalDate)}
+                    {formatDate(item.created_at)}
                   </td>
                   <td className="px-4 py-3 text-center">
-                    {item.achEligible ? (
+                    {item.auto_ach ? (
                       <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
-                        Ready
+                        ACH Ready
                       </span>
                     ) : (
                       <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">

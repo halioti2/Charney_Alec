@@ -14,12 +14,12 @@ export default function PaymentHistory() {
     }
 
     if (achFilter === 'ach') {
-      filtered = filtered.filter(item => item.achReference);
+      filtered = filtered.filter(item => item.ach_reference);
     } else if (achFilter === 'manual') {
-      filtered = filtered.filter(item => !item.achReference);
+      filtered = filtered.filter(item => !item.ach_reference);
     }
 
-    return filtered.sort((a, b) => new Date(b.payoutDate) - new Date(a.payoutDate));
+    return filtered.sort((a, b) => new Date(b.paid_at || b.scheduled_at || b.created_at) - new Date(a.paid_at || a.scheduled_at || a.created_at));
   }, [statusFilter, achFilter]);
 
   const formatCurrency = (amount) => {
@@ -176,25 +176,25 @@ export default function PaymentHistory() {
                   className="hover:bg-charney-cream/50 dark:hover:bg-charney-slate/30"
                 >
                   <td className="px-4 py-3 text-sm font-medium text-charney-black dark:text-charney-white">
-                    {item.agentName}
+                    {item.agent.full_name}
                   </td>
                   <td className="px-4 py-3 text-sm text-charney-gray">
-                    {item.propertyAddress}
+                    {item.transaction.property_address}
                   </td>
                   <td className="px-4 py-3 text-sm font-semibold text-right text-charney-black dark:text-charney-white">
-                    {formatCurrency(item.netPayout)}
+                    {formatCurrency(item.payout_amount)}
                   </td>
                   <td className="px-4 py-3 text-sm text-charney-gray">
-                    {formatDate(item.payoutDate)}
+                    {formatDate(item.paid_at || item.scheduled_at)}
                   </td>
                   <td className="px-4 py-3 text-center">
                     {getStatusBadge(item.status)}
                   </td>
                   <td className="px-4 py-3 text-center">
-                    {getAchBadge(item.achReference)}
+                    {getAchBadge(item.ach_reference)}
                   </td>
                   <td className="px-4 py-3 text-sm text-charney-gray font-mono">
-                    {item.achReference || item.id}
+                    {item.ach_reference || item.id}
                   </td>
                 </tr>
               ))}
@@ -211,20 +211,20 @@ export default function PaymentHistory() {
             {formatCurrency(
               filteredHistory
                 .filter(item => item.status === 'paid')
-                .reduce((sum, item) => sum + item.netPayout, 0)
+                .reduce((sum, item) => sum + item.payout_amount, 0)
             )}
           </p>
         </div>
         <div className="bg-charney-cream/30 dark:bg-charney-slate/30 rounded-lg p-4">
           <p className="text-sm font-medium text-charney-gray">ACH Payments</p>
           <p className="text-xl font-bold text-charney-black dark:text-charney-white">
-            {filteredHistory.filter(item => item.achReference).length}
+            {filteredHistory.filter(item => item.ach_reference).length}
           </p>
         </div>
         <div className="bg-charney-cream/30 dark:bg-charney-slate/30 rounded-lg p-4">
           <p className="text-sm font-medium text-charney-gray">Manual Payments</p>
           <p className="text-xl font-bold text-charney-black dark:text-charney-white">
-            {filteredHistory.filter(item => !item.achReference).length}
+            {filteredHistory.filter(item => !item.ach_reference).length}
           </p>
         </div>
       </div>

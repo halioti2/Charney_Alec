@@ -59,7 +59,7 @@ export default function SchedulePayoutModal({
     }
   };
 
-  const achEligibleCount = selectedItems.filter(item => item.achEligible).length;
+  const achEligibleCount = selectedItems.filter(item => item.auto_ach).length;
   const hasIneligibleItems = selectedItems.length > achEligibleCount;
 
   if (!isOpen) return null;
