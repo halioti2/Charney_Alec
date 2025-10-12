@@ -1,0 +1,97 @@
+# Render Blueprint for Charney Commission Tracker
+# This file defines the infrastructure for deploying to Render
+
+services:
+  # Main Flask API Service
+  - type: web
+    name: charney-commission-tracker
+    env: python
+    region: oregon
+    plan: free
+    branch: feature/database
+    buildCommand: "./build.sh"
+    startCommand: "gunicorn --bind 0.0.0.0:$PORT src.api.app:app"
+    healthCheckPath: /api/v1/health
+    
+    envVars:
+      # Application Settings
+      - key: APP_NAME
+        value: Charney Commission Tracker
+      
+      - key: APP_VERSION
+        value: 0.1.0
+      
+      - key: ENVIRONMENT
+        value: production
+      
+      - key: DEBUG
+        value: False
+      
+      # Flask Settings
+      - key: FLASK_HOST
+        value: 0.0.0.0
+      
+      - key: FLASK_PORT
+        sync: false
+        value: 10000
+      
+      - key: SECRET_KEY
+        generateValue: true
+      
+      # Database Settings
+      # For MVP: Using SQLite with persistent disk
+      # For Production: Upgrade to PostgreSQL database
+      - key: DATABASE_URL
+        value: sqlite:////opt/render/project/src/commissions.db
+      
+      - key: DATABASE_ECHO
+        value: False
+      
+      # OpenAI Settings (REQUIRED - Add your key in Render dashboard)
+      - key: OPENAI_API_KEY
+        sync: false
+      
+      - key: OPENAI_MODEL
+        value: gpt-4
+      
+      - key: OPENAI_TEMPERATURE
+        value: 0.1
+      
+      # CORS Settings
+      - key: CORS_ORIGINS
+        value: "*"
+      
+      # Logging Settings
+      - key: LOG_LEVEL
+        value: INFO
+      
+      - key: LOG_FILE
+        value: logs/app.log
+      
+      # API Settings
+      - key: API_PREFIX
+        value: /api/v1
+      
+      - key: MAX_CONTENT_LENGTH
+        value: 16777216
+      
+      # Validation Settings
+      - key: MIN_CONFIDENCE_SCORE
+        value: 0.5
+      
+      - key: AUTO_APPROVE_THRESHOLD
+        value: 0.9
+    
+    # Persistent disk for SQLite database
+    disk:
+      name: commission-data
+      mountPath: /opt/render/project/src
+      sizeGB: 1
+
+# Optional: PostgreSQL Database (uncomment when ready to upgrade from SQLite)
+# databases:
+#   - name: charney-commission-db
+#     databaseName: commissions
+#     user: charney_user
+#     plan: free
+
