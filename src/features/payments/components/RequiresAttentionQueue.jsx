@@ -1,21 +1,19 @@
-import React, { useMemo } from 'react';
-import { paymentQueueMock } from '../../../mocks/paymentsMockData';
+import React, { useState, useEffect } from 'react';
+import { usePaymentsAPI } from '../hooks/usePaymentsAPI';
 
 export default function RequiresAttentionQueue() {
-  // Filter items that require attention
-  const attentionItems = useMemo(() => {
-    return paymentQueueMock.filter(item => {
-      // Items that need attention:
-      // 1. Missing bank account info
-      // 2. Zero or negative payout amounts
-      // 3. Status indicates requires attention
-      return (
-        !item.bank_account || 
-        item.payout_amount <= 0 ||
-        item.status === 'failed'
-      );
-    });
-  }, []);
+  const [attentionItems, setAttentionItems] = useState([]);
+  const { fetchRequiresAttention, isLoading } = usePaymentsAPI();
+
+  // Load attention queue data on component mount
+  useEffect(() => {
+    const loadAttentionQueue = async () => {
+      const data = await fetchRequiresAttention();
+      setAttentionItems(data);
+    };
+
+    loadAttentionQueue();
+  }, [fetchRequiresAttention]);
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-US', {
@@ -92,6 +90,26 @@ export default function RequiresAttentionQueue() {
     );
   };
 
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="bg-white dark:bg-charney-charcoal rounded-xl border border-charney-light-gray dark:border-charney-gray/30 p-6">
+        <div className="text-center">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-charney-red"></div>
+          </div>
+          <h3 className="mt-2 text-sm font-medium text-charney-black dark:text-charney-white">
+            Checking for Issues...
+          </h3>
+          <p className="mt-1 text-sm text-charney-gray">
+            Scanning transactions that need attention
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Empty state
   if (attentionItems.length === 0) {
     return (
       <div className="bg-white dark:bg-charney-charcoal rounded-xl border border-charney-light-gray dark:border-charney-gray/30 p-6">
