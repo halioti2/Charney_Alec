@@ -1,10 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { calculateCommission } from '../lib/dashboardData.js';
-
-const currencyFormatter = new Intl.NumberFormat('en-US', {
-  style: 'currency',
-  currency: 'USD',
-});
+import { formatCurrency } from '../lib/formatters.js';
 
 export default function CommissionCalculationForm({ record, variant = 'plan' }) {
   const inputClasses =
@@ -100,35 +96,35 @@ export default function CommissionCalculationForm({ record, variant = 'plan' }) 
     <ul className="space-y-1 text-sm text-charney-black dark:text-charney-cream">
       <li className="flex justify-between font-medium">
         <span>Gross Commission Income (GCI)</span>
-        <strong>{currencyFormatter.format(commission.gci)}</strong>
+        <strong>{formatCurrency(commission.gci)}</strong>
       </li>
       <li className="flex justify-between text-charney-gray">
         <span>Referral Fee</span>
-        <span>-{currencyFormatter.format(commission.referralFee)}</span>
+        <span>-{formatCurrency(commission.referralFee)}</span>
       </li>
       <li className="flex justify-between text-charney-gray">
         <span>Franchise Fee ({plan.deductions.franchiseFeePct}%)</span>
-        <span>-{currencyFormatter.format(commission.franchiseFee)}</span>
+        <span>-{formatCurrency(commission.franchiseFee)}</span>
       </li>
       <li className="flex justify-between border-t border-charney-light-gray pt-2 font-bold dark:border-charney-gray">
         <span>Adjusted GCI for Split</span>
-        <span>{currencyFormatter.format(commission.adjustedGci)}</span>
+        <span>{formatCurrency(commission.adjustedGci)}</span>
       </li>
       <li className="flex justify-between pt-3 font-bold">
         <span>Agent Share ({commission.agentSplit}%)</span>
-        <span>{currencyFormatter.format(commission.agentShare)}</span>
+        <span>{formatCurrency(commission.agentShare)}</span>
       </li>
       <li className="flex justify-between text-charney-gray">
         <span>E&amp;O Insurance Fee</span>
-        <span>-{currencyFormatter.format(commission.eoFee)}</span>
+        <span>-{formatCurrency(commission.eoFee)}</span>
       </li>
       <li className="flex justify-between text-charney-gray">
         <span>Transaction Fee</span>
-        <span>-{currencyFormatter.format(commission.transactionFee)}</span>
+        <span>-{formatCurrency(commission.transactionFee)}</span>
       </li>
       <li className="flex justify-between border-t-2 border-charney-black pt-3 text-lg font-black text-green-600">
         <span>Agent Net Payout</span>
-        <span>{currencyFormatter.format(commission.agentNet)}</span>
+        <span>{formatCurrency(commission.agentNet)}</span>
       </li>
     </ul>
   );
@@ -162,15 +158,15 @@ export default function CommissionCalculationForm({ record, variant = 'plan' }) 
             <div>
               <dt className="font-semibold uppercase tracking-wide text-charney-gray">Cap Remaining</dt>
               <dd className="mt-1 text-base font-black text-charney-black dark:text-charney-cream">
-                {currencyFormatter.format(Math.max(plan.commissionCap - plan.currentTowardsCap, 0))}
+                {formatCurrency(Math.max(plan.commissionCap - plan.currentTowardsCap, 0))}
               </dd>
             </div>
             <div>
               <dt className="font-semibold uppercase tracking-wide text-charney-gray">Standard Fees</dt>
               <dd className="mt-1 space-y-1 text-sm text-charney-gray">
                 <p>Franchise {plan.deductions.franchiseFeePct}%</p>
-                <p>E&amp;O {currencyFormatter.format(plan.deductions.eoFee)}</p>
-                <p>Transaction {currencyFormatter.format(plan.deductions.transactionFee)}</p>
+                <p>E&amp;O {formatCurrency(plan.deductions.eoFee)}</p>
+                <p>Transaction {formatCurrency(plan.deductions.transactionFee)}</p>
               </dd>
             </div>
           </dl>

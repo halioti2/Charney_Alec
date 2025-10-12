@@ -2,7 +2,9 @@
 
 ## Legacy State Sources
 
-The current dashboard logic inside `initLegacyDashboard.js` owns data and UI state imperatively:
+> ✅ Update: `initLegacyDashboard.js` has been removed from the codebase. The notes below describe the previous legacy responsibilities for historical reference.
+
+The legacy dashboard logic inside `initLegacyDashboard.js` owned data and UI state imperatively:
 
 - **Data Sets**
   - `mockData`: array of 50 commission records (agent, property, sale price, audit trail, email chain).

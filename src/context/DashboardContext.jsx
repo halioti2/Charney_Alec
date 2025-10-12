@@ -22,8 +22,8 @@ export function DashboardProvider({ children, initialState = {} }) {
     theme: initialTheme,
     activeView: initialActiveView = 'broker',
     activeCommissionId: initialActiveCommissionId = null,
+    modalFocus: initialModalFocus = 'full',
     panelAgent: initialPanelAgent = null,
-    notification: initialNotification = null,
     user: initialUser,
   } = initialState;
 
@@ -33,8 +33,8 @@ export function DashboardProvider({ children, initialState = {} }) {
   const [theme, setTheme] = useState(() => initialTheme ?? getInitialTheme());
   const [activeView, setActiveView] = useState(initialActiveView);
   const [activeCommissionId, setActiveCommissionId] = useState(initialActiveCommissionId);
+  const [modalFocus, setModalFocus] = useState(initialModalFocus);
   const [panelAgent, setPanelAgent] = useState(initialPanelAgent);
-  const [notification, setNotification] = useState(initialNotification);
   const [user] = useState(() => initialUser ?? createMockUser());
 
   useEffect(() => {
@@ -71,10 +71,10 @@ export function DashboardProvider({ children, initialState = {} }) {
       switchView,
       activeCommissionId,
       setActiveCommissionId,
+      modalFocus,
+      setModalFocus,
       panelAgent,
       setPanelAgent,
-      notification,
-      setNotification,
       user,
       calculateCommission,
       toggleTheme,
@@ -86,8 +86,8 @@ export function DashboardProvider({ children, initialState = {} }) {
       theme,
       activeView,
       activeCommissionId,
+      modalFocus,
       panelAgent,
-      notification,
       user,
       toggleTheme,
       switchView,

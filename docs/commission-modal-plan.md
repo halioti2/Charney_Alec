@@ -56,7 +56,7 @@ All derived values (GCI, agent net, cap progress) come from `calculateCommission
 - `CommissionCalculationForm` (controlled inputs + breakdown, leverages `calculateCommission`, supports history two-column card layout).
    - `CommissionActions` (Approve/Request/Flag buttons).
 - `CommissionTRIDView` (printable document component – see `docs/trid-modal-checklist.md`).
-   - `NotificationToast` (reuse global toast context once built).
+- Global toast container (via `ToastProvider`) handles commission modal actions.
 
 3. **State Management**
    - Store `activeCommissionId`, modal visibility in `DashboardContext`.

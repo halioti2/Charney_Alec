@@ -1,12 +1,6 @@
 import { useMemo } from 'react';
 import { useDashboardContext } from '../context/DashboardContext.jsx';
-
-const formatCurrency = (value) =>
-  value.toLocaleString('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 0,
-  });
+import { formatCurrency } from '../lib/formatters.js';
 
 export default function CoordinatorJourneyProgress() {
   const { agentPlans } = useDashboardContext();
@@ -42,7 +36,8 @@ export default function CoordinatorJourneyProgress() {
           <div className="h-3 rounded-full bg-charney-red" style={{ width: `${progressPct}%` }} />
         </div>
         <p className="text-right text-sm font-bold" data-testid="journey-remaining">
-          {formatCurrency(remaining)} <span className="font-normal text-charney-gray">Remaining</span>
+          {formatCurrency(remaining, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}{' '}
+          <span className="font-normal text-charney-gray">Remaining</span>
         </p>
       </div>
     </div>

@@ -40,35 +40,30 @@ Use this checklist to migrate the legacy DOM-driven dashboard into idiomatic Rea
   - [X] Capture Supabase/Netlify dependencies for commission actions; keep UI handlers stubbed until RPC endpoints for approve/request/flag are ready (document expected payloads before integration).
 
 - [ ] **Audit Trail / Transaction Events** (see `docs/audit-trail-plan.md`)
-  - [ ] Design and add a `transaction_events` table (type, actor, metadata) to Supabase during integration.
-  - [ ] Create Netlify function / Supabase RPC contract for writing audit trail entries from modal actions.
-  - [ ] Build React audit trail list component with grouping + expand/collapse parity for broker panel.
-  - [ ] Replace legacy broker panel history DOM with React implementation using new component.
-  - [ ] Seed mock events until backend writes are wired.
-  - [ ] Tests: render audit trail list with grouped events; verify expand/collapse + timestamp formatting.
+  - [X] Design and add a `transaction_events` table (type, actor, metadata) to Supabase during integration.
+  - [X] Create Netlify function / Supabase RPC contract for writing audit trail entries from modal actions.
+  - [X] Build React audit trail list component with grouping + expand/collapse parity for broker panel.
+  - [X] Replace legacy broker panel history DOM with React implementation using new component.
+  - [X] Seed mock events until backend writes are wired.
+  - [X] Tests: render audit trail list with grouped events; verify expand/collapse + timestamp formatting.
 
-- [ ] **Broker Detail Panel**
-  - [ ] Convert sliding panel to a React component using portal + animation library or CSS transitions.
-  - [ ] Render audit trail entries with expand/collapse managed by state.
-  - [ ] Manage commission-plan inputs via React forms and validation.
-  - [ ] Tests: Panel open/close tests, audit trail toggle verification, plan form validation/unit tests.
+- [X] **Broker Detail Panel** (see [Broker Detail Panel Reference](./broker-detail-panel.md))
+  - [X] Convert sliding panel to a React component using portal + animation library or CSS transitions.
+  - [X] Render audit trail entries with expand/collapse managed by state.
+  - [X] Manage commission-plan inputs via React forms and validation.
+  - [X] Tests: Panel open/close tests, audit trail toggle verification, plan form validation/unit tests.
 
-- [ ] **Global Feedback & Utilities**
-  - [ ] Replace `successNotification` with a Toast context/component.
-  - [ ] Centralize currency/percent formatting utilities.
+- [ ] **Global Feedback & Utilities** (see [Global Feedback & Utilities Reference](./global-feedback-and-utilities.md))
+  - [X] Replace `successNotification` with a Toast context/component.
+  - [X] Centralize currency/percent formatting utilities.
   - [ ] Implement keyboard accessibility (Escape closes modal/panel, focus traps).
-  - [ ] Tests: Accessibility regression tests, formatter unit tests, toast behavior tests.
+  - [ ] Tests: Accessibility regression tests (pending focus trap), formatter unit tests, toast behavior tests.
 
-- [ ] **Supabase Integration**
-  - [ ] Map mock data loaders to Supabase RPC or table queries.
-  - [ ] Add async data fetching with loading/error states.
-  - [ ] Secure RPC calls through Netlify functions as needed.
-  - [ ] Review current Supabase schema against dashboard data needs (tables, columns, RPCs).
-  - [ ] Plan and apply any schema migrations required for new fields/tables.
-  - [ ] Tests: Integration tests against Supabase mocks; contract tests for Netlify functions.
+- Supabase integration tasks are tracked in `docs/context-track-a-ethan.md` under **Supabase Integration TODO**.
 
 - [ ] **Cleanup**
-  - [ ] Remove `initLegacyDashboard.js` once all sections are React-based.
+  - **Process:** Add tests → Implement → Retest & verify (repeat per feature).
+  - [X] Remove `initLegacyDashboard.js`; all dashboard sections are now React-based.
   - [ ] Prune unused CSS and convert remaining bespoke styles to Tailwind where practical.
   - [ ] Add Jest/RTL smoke tests for critical components (modal calculations, tables, chart wrappers).
 

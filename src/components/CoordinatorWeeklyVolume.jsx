@@ -1,12 +1,6 @@
 import { useMemo } from 'react';
 import { useDashboardContext } from '../context/DashboardContext.jsx';
-
-const formatCurrency = (value) =>
-  value.toLocaleString('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 0,
-  });
+import { formatCurrency } from '../lib/formatters.js';
 
 export default function CoordinatorWeeklyVolume() {
   const { commissions } = useDashboardContext();
@@ -22,7 +16,7 @@ export default function CoordinatorWeeklyVolume() {
         Weekly <span className="text-charney-red">Volume</span>
       </h3>
       <p className="text-sm text-charney-gray">Total pipeline volume for active deals:</p>
-      <p className="mt-2 text-3xl font-black">{formatCurrency(totalVolume)}</p>
+      <p className="mt-2 text-3xl font-black">{formatCurrency(totalVolume, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</p>
     </div>
   );
 }

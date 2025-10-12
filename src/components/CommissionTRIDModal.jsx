@@ -1,13 +1,4 @@
-const currencyFormatter = new Intl.NumberFormat('en-US', {
-  style: 'currency',
-  currency: 'USD',
-});
-
-const percentFormatter = new Intl.NumberFormat('en-US', {
-  style: 'percent',
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2,
-});
+import { formatCurrency, formatPercent } from '../lib/formatters.js';
 
 function buildDisclosure(record) {
   const parsed = record.parsedData ?? {};
@@ -68,9 +59,6 @@ function buildDisclosure(record) {
 export default function CommissionTRIDModal({ record, onClose }) {
   const disclosure = buildDisclosure(record);
   const issueDate = new Date().toLocaleDateString('en-US');
-
-  const formatCurrency = (value) => currencyFormatter.format(value ?? 0);
-  const formatPercent = (value) => percentFormatter.format(value ?? 0);
 
   return (
     <div className="fixed inset-0 z-[60] flex justify-center bg-black/70 px-4 py-10 print:static print:block print:bg-white print:px-0 print:py-0">
@@ -141,7 +129,7 @@ export default function CommissionTRIDModal({ record, onClose }) {
               </div>
               <div className="rounded-xl bg-charney-cream p-4 text-center dark:bg-charney-gray/30">
                 <p className="font-brand text-[0.65rem] uppercase tracking-[0.32em] text-charney-gray">Interest Rate</p>
-                <p className="mt-2 text-xl font-black text-charney-black dark:text-charney-cream">{formatPercent(disclosure.interestRate / 100)}</p>
+                <p className="mt-2 text-xl font-black text-charney-black dark:text-charney-cream">{formatPercent(disclosure.interestRate)}</p>
               </div>
               <div className="rounded-xl bg-charney-cream p-4 text-center dark:bg-charney-gray/30">
                 <p className="font-brand text-[0.65rem] uppercase tracking-[0.32em] text-charney-gray">Monthly P&amp;I</p>

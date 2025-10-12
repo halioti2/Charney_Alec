@@ -26,27 +26,21 @@ These categories appear in both the legacy modal and the slide-in broker panel, 
 
 ## Audit Trail Component Checklist
 
-1. **Data Modeling**
-   - Map Supabase `transaction_events` rows into `{ id, category, actorName, actorId, eventType, createdAt, metadata, visibleToAgent }`.
-   - Normalize `event_type` strings (matching taxonomy above) to ensure consistent grouping.
-2. **Component Structure**
-   - Build a reusable `<AuditTrailList events={[]}>` component:
-     - Groups events by category.
-     - Displays actor name, relative timestamp, and action text.
-     - Supports optional metadata rendering (e.g., diffs, links).
-   - Expose props for visibility filtering (e.g., hide events where `visibleToAgent === false`).
-3. **Interactions**
-   - Support expand/collapse per category (default expanded for current modal view, collapsed in broker panel).
-   - Allow keyboard navigation and ARIA attributes for accessibility.
-4. **Styling**
-   - Mirror legacy indentation and border treatments (category header in red, items with left border accent).
-   - Provide variants for modal and broker panel contexts if needed.
-5. **Integration**
-   - Wire into commission modal (already seeded with grouped data).
-   - Replace the legacy broker detail panel history DOM once the React panel is in place.
-6. **Testing**
-   - Unit test grouping logic (no empty categories rendered).
-   - RTL tests verifying expand/collapse toggles and accessibility labels.
+- [x] **Data Modeling**
+  - Map Supabase `transaction_events` rows into `{ id, category, actorName, actorId, eventType, createdAt, metadata, visibleToAgent }`.
+  - Normalize `event_type` strings (matching taxonomy above) to ensure consistent grouping.
+- [x] **Component Structure**
+  - Build a reusable `<AuditTrailList events={[]}>` component that groups events, displays actor/timestamp/action text, and accepts visibility props.
+- [x] **Interactions**
+  - Support expand/collapse per category with accessible controls.
+- [x] **Styling**
+  - Mirror legacy indentation and accent borders; provide modal-friendly variant.
+- [x] **Integration (Commission Modal)**
+  - Render the audit trail list inside `CommissionModal` (powered by mock data for now).
+- [X] **Integration (Broker Detail Panel)**
+  - Introduce `AuditTrailDrawer` to replicate the legacy sidebar for agent clicks (panel migration can reuse this drawer).
+- [x] **Testing**
+  - Add grouping and interaction tests for the audit trail list and ensure modal tests cover actor rendering.
 
 ## API Contract (`transaction_events`)
 
@@ -81,4 +75,3 @@ type TransactionEventPayload = {
 
 - MVP allows both coordinators and brokers to write events via the function; tighten RLS/function checks later without changing the UI contract.
 - `visible_to_agent` flag controls whether borrower-facing UIs see an event.
-

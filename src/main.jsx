@@ -3,14 +3,17 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import App from '../App.jsx';
 import { DashboardProvider } from './context/DashboardContext.jsx';
+import { ToastProvider } from './context/ToastContext.jsx';
 import './index.css';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <BrowserRouter>
-      <DashboardProvider>
-        <App />
-      </DashboardProvider>
+      <ToastProvider>
+        <DashboardProvider>
+          <App />
+        </DashboardProvider>
+      </ToastProvider>
     </BrowserRouter>
   </React.StrictMode>,
 );

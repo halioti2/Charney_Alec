@@ -1,14 +1,6 @@
 import { useMemo } from 'react';
 import { useDashboardContext } from '../context/DashboardContext.jsx';
-
-const formatCurrency = (value) =>
-  value.toLocaleString('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 2,
-  });
-
-const formatPercent = (value) => `${value.toFixed(1)}%`;
+import { formatCurrency, formatPercent, formatNumber } from '../lib/formatters.js';
 
 export default function BrokerMetrics() {
   const { commissions } = useDashboardContext();
@@ -16,10 +8,10 @@ export default function BrokerMetrics() {
   const metrics = useMemo(() => {
     if (!commissions.length) {
       return [
-        { label: 'Commissions Paid (YTD)', value: '$0.00' },
-        { label: 'Leases Signed (YTD)', value: '0' },
-        { label: 'Avg Commission %', value: '0.0%' },
-        { label: 'Active Agents', value: '0' },
+      { label: 'Commissions Paid (YTD)', value: formatCurrency(0) },
+      { label: 'Leases Signed (YTD)', value: '0' },
+      { label: 'Avg Commission %', value: formatPercent(0, { maximumFractionDigits: 1 }) },
+      { label: 'Active Agents', value: '0' },
       ];
     }
 
@@ -33,9 +25,9 @@ export default function BrokerMetrics() {
 
     return [
       { label: 'Commissions Paid (YTD)', value: formatCurrency(totalGci) },
-      { label: 'Leases Signed (YTD)', value: leasesSigned.toString() },
-      { label: 'Avg Commission %', value: formatPercent(avgCommission) },
-      { label: 'Active Agents', value: activeAgents.toString() },
+      { label: 'Leases Signed (YTD)', value: formatNumber(leasesSigned) },
+      { label: 'Avg Commission %', value: formatPercent(avgCommission, { maximumFractionDigits: 1 }) },
+      { label: 'Active Agents', value: formatNumber(activeAgents) },
     ];
   }, [commissions]);
 

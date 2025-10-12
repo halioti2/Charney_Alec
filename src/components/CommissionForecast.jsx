@@ -1,12 +1,6 @@
 import { useMemo } from 'react';
 import { useDashboardContext } from '../context/DashboardContext.jsx';
-
-const formatCurrency = (value) =>
-  value.toLocaleString('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 2,
-  });
+import { formatCurrency } from '../lib/formatters.js';
 
 export default function CommissionForecast() {
   const { commissions } = useDashboardContext();

@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { useDashboardContext } from '../context/DashboardContext.jsx';
+import { formatCurrency } from '../lib/formatters.js';
 
 const statusColors = {
   'Needs Review': 'bg-yellow-100 text-yellow-800',
@@ -8,17 +9,8 @@ const statusColors = {
   'Awaiting Info': 'bg-orange-100 text-orange-800',
 };
 
-const formatCurrency = (value) =>
-  value.toLocaleString('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 2,
-  });
-
 export default function CoordinatorQueueTable() {
-  const { commissions } = useDashboardContext();
-
-  const { setActiveCommissionId } = useDashboardContext();
+  const { commissions, setActiveCommissionId, setModalFocus, setPanelAgent } = useDashboardContext();
 
   const rows = useMemo(
     () =>
@@ -50,9 +42,21 @@ export default function CoordinatorQueueTable() {
               <tr
                 key={commission.id}
                 className="cursor-pointer hover:bg-charney-cream/50 dark:hover:bg-charney-cream/10"
-                onClick={() => setActiveCommissionId(commission.id)}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  setModalFocus?.('full');
+                  setActiveCommissionId(commission.id);
+                }}
               >
-                <td className="p-4 font-bold">{commission.broker}</td>
+                <td
+                  className="p-4 font-bold"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    setPanelAgent?.(commission.id);
+                  }}
+                >
+                  {commission.broker}
+                </td>
                 <td className="p-4 text-charney-gray">{commission.property}</td>
                 <td className="p-4 text-charney-gray">{formatCurrency(commission.totalCommission)}</td>
                 <td className="p-4">
