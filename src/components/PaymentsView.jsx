@@ -1,3 +1,5 @@
+import { PayoutQueue, PaymentHistory } from '../features/payments/components';
+
 export default function PaymentsView({ hidden }) {
   return (
     <section
@@ -10,15 +12,18 @@ export default function PaymentsView({ hidden }) {
           Payments
         </h2>
         <p className="text-sm text-charney-gray">
-          This tab will host the Payments dashboard (payout queue, history, ACH status). Build work inside
-          `src/features/payments/`.
+          Manage agent payouts and payment history
         </p>
       </header>
-      <div className="rounded-xl border border-charney-light-gray bg-white p-6 shadow-sm dark:border-charney-gray/70 dark:bg-charney-charcoal/50">
-        <p className="text-sm text-charney-gray">
-          Placeholder: Replace with Track B components (PayoutQueue, SchedulePayoutModal, PaymentHistory).
-        </p>
-      </div>
+
+      {/* Payout Queue Component */}
+      <PayoutQueue />
+
+      {/* Payment History Component */}
+      <PaymentHistory />
+
+      {/* TODO: Add other payment components */}
+      {/* <SchedulePayoutModal /> */}
     </section>
   );
 }
