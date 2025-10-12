@@ -130,7 +130,7 @@ export default function PaymentHistory() {
             Payment History
           </h3>
           <p className="text-sm text-charney-gray">
-            {filteredHistory.length} payment{filteredHistory.length !== 1 ? 's' : ''} found
+            {historyData.length} payment{historyData.length !== 1 ? 's' : ''} found
           </p>
         </div>
         
