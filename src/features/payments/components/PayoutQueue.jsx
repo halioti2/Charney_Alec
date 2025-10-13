@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useToast } from '../../../context/ToastContext.jsx';
-import { usePayoutQueue, usePayoutScheduling } from '../hooks/usePaymentsAPI.ts';
+import { usePayoutQueue, usePayoutScheduling } from '../hooks/usePaymentsAPI';
 import SchedulePayoutModal from './SchedulePayoutModal.jsx';
 
 export default function PayoutQueue() {
@@ -252,9 +252,8 @@ export default function PayoutQueue() {
                 </td>
               </tr>
             ))}
-            </tbody>
-          </table>
-        </div>
+          </tbody>
+        </table>
       </div>
 
       {/* Running Total Panel */}
