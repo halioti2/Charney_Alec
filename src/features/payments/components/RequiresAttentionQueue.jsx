@@ -64,28 +64,24 @@ export default function RequiresAttentionQueue() {
   const getSeverityBadge = (severity) => {
     const badges = {
       high: {
-        bg: 'bg-red-100 dark:bg-red-900/30',
-        text: 'text-red-800 dark:text-red-400',
-        icon: '🚨'
+        bg: 'bg-red-100',
+        text: 'text-red-800'
       },
       medium: {
-        bg: 'bg-yellow-100 dark:bg-yellow-900/30',
-        text: 'text-yellow-800 dark:text-yellow-400',
-        icon: '⚠️'
+        bg: 'bg-yellow-100',
+        text: 'text-yellow-800'
       },
       low: {
-        bg: 'bg-blue-100 dark:bg-blue-900/30',
-        text: 'text-blue-800 dark:text-blue-400',
-        icon: 'ℹ️'
+        bg: 'bg-blue-100',
+        text: 'text-blue-800'
       }
     };
 
     const badge = badges[severity] || badges.low;
-    
+
     return (
-      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${badge.bg} ${badge.text}`}>
-        <span className="mr-1">{badge.icon}</span>
-        {severity.charAt(0).toUpperCase() + severity.slice(1)}
+      <span className={`inline-flex items-center rounded-sm px-2.5 py-1 text-xs font-bold uppercase ${badge.bg} ${badge.text}`}>
+        {severity}
       </span>
     );
   };
@@ -131,79 +127,57 @@ export default function RequiresAttentionQueue() {
   }
 
   return (
-    <div className="bg-white dark:bg-charney-charcoal rounded-xl border border-charney-light-gray dark:border-charney-gray/30">
-      <div className="px-6 py-4 border-b border-charney-light-gray dark:border-charney-gray/30">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-charney-black dark:text-charney-white">
-            Requires Attention ({attentionItems.length})
-          </h3>
-          <div className="text-sm text-charney-gray">
-            Administrative review needed
-          </div>
-        </div>
-      </div>
+    <div className="card p-6">
+      <h3 className="mb-4 text-2xl font-black tracking-tighter">
+        Requires <span className="text-charney-red">Attention</span> ({attentionItems.length})
+      </h3>
 
-      <div className="overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-charney-cream dark:bg-charney-slate">
-              <tr>
-                <th className="px-4 py-3 text-left text-sm font-medium text-charney-black dark:text-charney-white">
-                  Agent Name
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-charney-black dark:text-charney-white">
-                  Property Address
-                </th>
-                <th className="px-4 py-3 text-right text-sm font-medium text-charney-black dark:text-charney-white">
-                  Payout Amount
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-charney-black dark:text-charney-white">
-                  Created Date
-                </th>
-                <th className="px-4 py-3 text-center text-sm font-medium text-charney-black dark:text-charney-white">
-                  Issue
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-charney-black dark:text-charney-white">
-                  Description
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-charney-light-gray dark:divide-charney-gray/30">
-              {attentionItems.map((item) => {
-                const attention = getAttentionReason(item);
-                return (
-                  <tr 
-                    key={item.id}
-                    className="hover:bg-charney-cream/50 dark:hover:bg-charney-slate/30"
-                  >
-                    <td className="px-4 py-3 text-sm font-medium text-charney-black dark:text-charney-white">
-                      {item.agent.full_name}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-charney-gray">
-                      {item.transaction.property_address}
-                    </td>
-                    <td className="px-4 py-3 text-sm font-semibold text-right text-charney-black dark:text-charney-white">
-                      {formatCurrency(item.payout_amount)}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-charney-gray">
-                      {formatDate(item.created_at)}
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      {getSeverityBadge(attention.severity)}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-charney-gray">
-                      <div>
-                        <div className="font-medium text-charney-black dark:text-charney-white">
-                          {attention.reason}
-                        </div>
-                        <div className="text-xs text-charney-gray">
-                          {attention.description}
-                        </div>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
+      <div className="overflow-x-auto" role="region" aria-label="Requires attention queue">
+        <table className="w-full text-left text-sm">
+          <thead className="text-xs uppercase">
+            <tr>
+              <th className="p-4">Agent</th>
+              <th className="p-4">Property</th>
+              <th className="p-4 text-center">Payout Amount</th>
+              <th className="p-4">Date</th>
+              <th className="p-4 text-center">Issue</th>
+              <th className="p-4">Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            {attentionItems.map((item) => {
+              const attention = getAttentionReason(item);
+              return (
+                <tr
+                  key={item.id}
+                  className="cursor-pointer hover:bg-charney-cream/50 dark:hover:bg-charney-cream/10"
+                >
+                  <td className="p-4 font-bold">
+                    {item.agent.full_name}
+                  </td>
+                  <td className="p-4 text-charney-gray">
+                    {item.transaction.property_address}
+                  </td>
+                  <td className="p-4 text-center text-charney-gray">
+                    {formatCurrency(item.payout_amount)}
+                  </td>
+                  <td className="p-4 text-charney-gray">
+                    {formatDate(item.created_at)}
+                  </td>
+                  <td className="p-4 text-center">
+                    {getSeverityBadge(attention.severity)}
+                  </td>
+                  <td className="p-4 text-charney-gray">
+                    <div className="font-medium text-charney-black dark:text-charney-white">
+                      {attention.reason}
+                    </div>
+                    <div className="text-xs text-charney-gray mt-1">
+                      {attention.description}
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
             </tbody>
           </table>
         </div>

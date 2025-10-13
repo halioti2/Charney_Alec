@@ -175,7 +175,7 @@ export default function SchedulePayoutModal({
               type="button"
               onClick={handleCancel}
               disabled={isProcessing}
-              className="px-4 py-2 text-sm font-medium text-charney-gray hover:text-charney-black dark:hover:text-charney-white transition-colors disabled:opacity-50"
+              className="px-4 py-2 text-sm font-bold uppercase text-charney-gray hover:text-charney-black transition-colors disabled:opacity-50"
             >
               Cancel
             </button>
@@ -183,7 +183,7 @@ export default function SchedulePayoutModal({
               type="button"
               onClick={handleConfirm}
               disabled={isProcessing}
-              className="px-4 py-2 text-sm font-medium bg-charney-red text-charney-white rounded-lg hover:bg-charney-black transition-colors disabled:opacity-50 flex items-center"
+              className="px-4 py-2 text-sm font-bold uppercase bg-charney-red text-white hover:bg-charney-black transition-colors disabled:opacity-50 flex items-center"
             >
               {isProcessing ? (
                 <>
