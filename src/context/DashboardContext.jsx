@@ -25,6 +25,8 @@ export function DashboardProvider({ children, initialState = {} }) {
     modalFocus: initialModalFocus = 'full',
     panelAgent: initialPanelAgent = null,
     user: initialUser,
+    isPdfAuditVisible: initialIsPdfAuditVisible = false,
+    currentAuditId: initialCurrentAuditId = null,
   } = initialState;
 
   const [commissions, setCommissions] = useState(() => initialCommissions ?? createMockCommissions());
@@ -36,6 +38,8 @@ export function DashboardProvider({ children, initialState = {} }) {
   const [modalFocus, setModalFocus] = useState(initialModalFocus);
   const [panelAgent, setPanelAgent] = useState(initialPanelAgent);
   const [user] = useState(() => initialUser ?? createMockUser());
+  const [isPdfAuditVisible, setIsPdfAuditVisible] = useState(initialIsPdfAuditVisible);
+  const [currentAuditId, setCurrentAuditId] = useState(initialCurrentAuditId);
 
   useEffect(() => {
     if (typeof document === 'undefined') return;
@@ -54,6 +58,16 @@ export function DashboardProvider({ children, initialState = {} }) {
 
   const switchView = useCallback((view) => {
     setActiveView(view);
+  }, []);
+
+  const showPdfAudit = useCallback((commissionId) => {
+    setCurrentAuditId(commissionId);
+    setIsPdfAuditVisible(true);
+  }, []);
+
+  const hidePdfAudit = useCallback(() => {
+    setIsPdfAuditVisible(false);
+    setCurrentAuditId(null);
   }, []);
 
   const contextValue = useMemo(
@@ -78,6 +92,11 @@ export function DashboardProvider({ children, initialState = {} }) {
       user,
       calculateCommission,
       toggleTheme,
+      // PDF Audit state
+      isPdfAuditVisible,
+      currentAuditId,
+      showPdfAudit,
+      hidePdfAudit,
     }),
     [
       commissions,
@@ -91,6 +110,10 @@ export function DashboardProvider({ children, initialState = {} }) {
       user,
       toggleTheme,
       switchView,
+      isPdfAuditVisible,
+      currentAuditId,
+      showPdfAudit,
+      hidePdfAudit,
     ],
   );
 
