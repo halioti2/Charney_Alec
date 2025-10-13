@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { usePaymentHistory } from '../hooks/usePaymentsAPI.ts';
+import { usePaymentHistory } from '../hooks/usePaymentsAPI';
 
 export default function PaymentHistory() {
   const [statusFilter, setStatusFilter] = useState('all');
@@ -166,8 +166,7 @@ export default function PaymentHistory() {
               <th className="p-4">Property</th>
               <th className="p-4 text-center">Amount</th>
               <th className="p-4">Payout Date</th>
-              <th className="p-4 text-center">
-              Status</th>
+              <th className="p-4 text-center">Status</th>
               <th className="p-4 text-center">Method</th>
               <th className="p-4">Reference</th>
             </tr>
@@ -201,9 +200,8 @@ export default function PaymentHistory() {
                 </td>
               </tr>
             ))}
-            </tbody>
-          </table>
-        </div>
+          </tbody>
+        </table>
       </div>
 
       {/* Summary Stats */}
