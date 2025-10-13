@@ -1,26 +1,26 @@
-import { useState, useMemo } from 'react';
-import { paymentHistoryMock } from '../../../mocks/paymentsMockData.ts';
+import { useState, useEffect } from 'react';
+import { usePaymentHistory } from '../hooks/usePaymentsAPI.ts';
 
 export default function PaymentHistory() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [achFilter, setAchFilter] = useState('all');
+  const [historyData, setHistoryData] = useState([]);
 
-  // Filter payment history based on selected filters
-  const filteredHistory = useMemo(() => {
-    let filtered = paymentHistoryMock;
+  const { fetchPaymentHistory, isLoading } = usePaymentHistory();
 
-    if (statusFilter !== 'all') {
-      filtered = filtered.filter(item => item.status === statusFilter);
-    }
+  // Load payment history data when filters change
+  useEffect(() => {
+    const loadPaymentHistory = async () => {
+      const data = await fetchPaymentHistory({
+        status: statusFilter,
+        achMethod: achFilter,
+        limit: 100
+      });
+      setHistoryData(data);
+    };
 
-    if (achFilter === 'ach') {
-      filtered = filtered.filter(item => item.ach_reference);
-    } else if (achFilter === 'manual') {
-      filtered = filtered.filter(item => !item.ach_reference);
-    }
-
-    return filtered.sort((a, b) => new Date(b.paid_at || b.scheduled_at || b.created_at) - new Date(a.paid_at || a.scheduled_at || a.created_at));
-  }, [statusFilter, achFilter]);
+    loadPaymentHistory();
+  }, [fetchPaymentHistory, statusFilter, achFilter]);
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-US', {
@@ -82,7 +82,26 @@ export default function PaymentHistory() {
     );
   };
 
-  if (filteredHistory.length === 0) {
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="bg-white dark:bg-charney-charcoal rounded-xl border border-charney-light-gray dark:border-charney-gray/30 p-6">
+        <div className="text-center">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-charney-red"></div>
+          </div>
+          <h3 className="mt-2 text-sm font-medium text-charney-black dark:text-charney-white">
+            Loading Payment History...
+          </h3>
+          <p className="mt-1 text-sm text-charney-gray">
+            Fetching transaction records
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (historyData.length === 0) {
     return (
       <div className="rounded-xl border border-charney-light-gray bg-white p-8 shadow-sm dark:border-charney-gray/70 dark:bg-charney-charcoal/50">
         <div className="text-center">
@@ -111,7 +130,7 @@ export default function PaymentHistory() {
             Payment History
           </h3>
           <p className="text-sm text-charney-gray">
-            {filteredHistory.length} payment{filteredHistory.length !== 1 ? 's' : ''} found
+            {historyData.length} payment{historyData.length !== 1 ? 's' : ''} found
           </p>
         </div>
         
@@ -170,7 +189,7 @@ export default function PaymentHistory() {
               </tr>
             </thead>
             <tbody className="divide-y divide-charney-light-gray dark:divide-charney-gray/30">
-              {filteredHistory.map((item) => (
+              {historyData.map((item) => (
                 <tr 
                   key={item.id}
                   className="hover:bg-charney-cream/50 dark:hover:bg-charney-slate/30"
@@ -209,7 +228,7 @@ export default function PaymentHistory() {
           <p className="text-sm font-medium text-charney-gray">Total Paid</p>
           <p className="text-xl font-bold text-charney-black dark:text-charney-white">
             {formatCurrency(
-              filteredHistory
+              historyData
                 .filter(item => item.status === 'paid')
                 .reduce((sum, item) => sum + item.payout_amount, 0)
             )}
@@ -218,13 +237,13 @@ export default function PaymentHistory() {
         <div className="bg-charney-cream/30 dark:bg-charney-slate/30 rounded-lg p-4">
           <p className="text-sm font-medium text-charney-gray">ACH Payments</p>
           <p className="text-xl font-bold text-charney-black dark:text-charney-white">
-            {filteredHistory.filter(item => item.ach_reference).length}
+            {historyData.filter(item => item.ach_reference).length}
           </p>
         </div>
         <div className="bg-charney-cream/30 dark:bg-charney-slate/30 rounded-lg p-4">
           <p className="text-sm font-medium text-charney-gray">Manual Payments</p>
           <p className="text-xl font-bold text-charney-black dark:text-charney-white">
-            {filteredHistory.filter(item => !item.ach_reference).length}
+            {historyData.filter(item => !item.ach_reference).length}
           </p>
         </div>
       </div>

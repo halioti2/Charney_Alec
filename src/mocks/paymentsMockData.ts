@@ -75,6 +75,31 @@ export const agentsMock: Agent[] = [
     email: 'emily.white@charney.com',
     default_bank_account_id: 'bank-003',
   },
+  // Edge case agents
+  {
+    id: 'agent-006',
+    full_name: 'David Chen',
+    email: 'david.chen@charney.com',
+    default_bank_account_id: null, // Missing bank info
+  },
+  {
+    id: 'agent-007',
+    full_name: 'Sarah Martinez',
+    email: 'sarah.martinez@charney.com',
+    default_bank_account_id: 'bank-007',
+  },
+  {
+    id: 'agent-008',
+    full_name: 'Michael Thompson',
+    email: 'michael.thompson@charney.com',
+    default_bank_account_id: 'bank-008',
+  },
+  {
+    id: 'agent-009',
+    full_name: 'Lisa Rodriguez',
+    email: 'lisa.rodriguez@charney.com',
+    default_bank_account_id: null, // No bank account - manual check processing
+  },
 ];
 
 // Mock Transactions
@@ -97,6 +122,31 @@ export const transactionsMock: Transaction[] = [
     pending_payout_amount: 72500,
     latest_payout_id: null,
   },
+  // Edge case transactions
+  {
+    id: 'txn-006',
+    property_address: '789 Broadway, Suite 15',
+    pending_payout_amount: 0, // Zero amount
+    latest_payout_id: null,
+  },
+  {
+    id: 'txn-007',
+    property_address: '456 Park Ave, Floor 20',
+    pending_payout_amount: 25000,
+    latest_payout_id: 'payout-004',
+  },
+  {
+    id: 'txn-008',
+    property_address: '321 Madison Ave, Suite 8',
+    pending_payout_amount: 18750,
+    latest_payout_id: 'payout-005',
+  },
+  {
+    id: 'txn-009',
+    property_address: '654 Lexington Ave, Unit 12',
+    pending_payout_amount: 42000,
+    latest_payout_id: 'payout-006',
+  },
 ];
 
 // Mock Bank Accounts
@@ -113,6 +163,21 @@ export const bankAccountsMock: PayoutBankAccount[] = [
     agent_id: 'agent-003',
     account_nickname: 'Wells Fargo Savings',
     mask: '****5678',
+    is_default: true,
+  },
+  // Edge case bank accounts
+  {
+    id: 'bank-007',
+    agent_id: 'agent-007',
+    account_nickname: 'Citibank Checking',
+    mask: '****9999',
+    is_default: true,
+  },
+  {
+    id: 'bank-008',
+    agent_id: 'agent-008',
+    account_nickname: 'PNC Business Account',
+    mask: '****7777',
     is_default: true,
   },
 ];
@@ -148,6 +213,69 @@ export const commissionPayoutsMock: CommissionPayout[] = [
     paid_at: null,
     failure_reason: null,
     created_at: '2024-10-09T09:15:00Z',
+  },
+  // Edge case: Zero payout amount (should be filtered out)
+  {
+    id: 'payout-003',
+    transaction_id: 'txn-006',
+    agent_id: 'agent-006',
+    batch_id: null,
+    payout_amount: 0,
+    status: 'ready',
+    auto_ach: false,
+    ach_provider: null,
+    ach_reference: null,
+    scheduled_at: null,
+    paid_at: null,
+    failure_reason: null,
+    created_at: '2024-10-10T11:30:00Z',
+  },
+  // Edge case: Failed payout - Realistic failure scenarios
+  {
+    id: 'payout-004',
+    transaction_id: 'txn-007',
+    agent_id: 'agent-007',
+    batch_id: 'batch-003',
+    payout_amount: 25000,
+    status: 'failed',
+    auto_ach: true,
+    ach_provider: 'stripe',
+    ach_reference: null,
+    scheduled_at: '2024-10-10T14:00:00Z',
+    paid_at: null,
+    failure_reason: 'Agent bank account closed or invalid',
+    created_at: '2024-10-10T12:00:00Z',
+  },
+  // Additional failure scenarios
+  {
+    id: 'payout-005',
+    transaction_id: 'txn-008',
+    agent_id: 'agent-008',
+    batch_id: 'batch-003',
+    payout_amount: 18750,
+    status: 'failed',
+    auto_ach: true,
+    ach_provider: 'stripe',
+    ach_reference: null,
+    scheduled_at: '2024-10-11T10:00:00Z',
+    paid_at: null,
+    failure_reason: 'Brokerage account daily transfer limit exceeded',
+    created_at: '2024-10-11T08:00:00Z',
+  },
+  {
+    id: 'payout-006',
+    transaction_id: 'txn-009',
+    agent_id: 'agent-009',
+    batch_id: null,
+    payout_amount: 42000,
+    status: 'failed',
+    auto_ach: false,
+    ach_provider: null,
+    ach_reference: null,
+    scheduled_at: '2024-10-09T16:00:00Z',
+    paid_at: null,
+    failure_reason: 'Check processing error - invalid mailing address',
+    created_at: '2024-10-09T14:00:00Z',
   },
 ];
 
