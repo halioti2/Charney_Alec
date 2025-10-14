@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useDashboardContext } from '../context/DashboardContext.jsx';
 import { formatCurrency } from '../lib/formatters.js';
 
@@ -9,8 +10,9 @@ const statusColors = {
   'Awaiting Info': 'bg-orange-100 text-orange-800',
 };
 
-const CoordinatorQueueTable = () => {
-  const { commissions, showPdfAudit } = useDashboardContext();
+export default function CoordinatorQueueTable() {
+  const navigate = useNavigate();
+  const { commissions } = useDashboardContext();
 
   const rows = useMemo(
     () =>
@@ -25,7 +27,7 @@ const CoordinatorQueueTable = () => {
   const handleProcessClick = (e, commissionId) => {
     e.preventDefault();
     e.stopPropagation();
-    showPdfAudit(commissionId);
+    navigate(`/pdf-audit/${commissionId}`);
   };
 
   return (
@@ -74,6 +76,4 @@ const CoordinatorQueueTable = () => {
       </div>
     </div>
   );
-};
-
-export default CoordinatorQueueTable;
+}
