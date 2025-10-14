@@ -2,6 +2,7 @@
 -- PostgreSQL database dump
 --
 
+\restrict MtJTn9ypjM3Ae3mbgqCxEClI3iJs7h3jQ5kabWTLVgV23b7RIe9z1Jcvi1y2QO9
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.6 (Homebrew)
@@ -2880,7 +2881,8 @@ CREATE TABLE public.commission_evidences (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     extraction_data jsonb NOT NULL,
     confidence numeric,
-    requires_review boolean DEFAULT false
+    requires_review boolean DEFAULT false,
+    error_type text
 );
 
 
@@ -2889,6 +2891,13 @@ CREATE TABLE public.commission_evidences (
 --
 
 COMMENT ON TABLE public.commission_evidences IS 'Stores a complete JSON snapshot of all data extracted from a single source document.';
+
+
+--
+-- Name: COLUMN commission_evidences.error_type; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.commission_evidences.error_type IS 'If an error occurred during parsing, this field stores the type of error, e.g., "UNREADABLE_DOCUMENT", "PASSWORD_PROTECTED".';
 
 
 --
@@ -4529,6 +4538,34 @@ ALTER TABLE auth.sso_providers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE auth.users ENABLE ROW LEVEL SECURITY;
 
 --
+-- Name: commission_checklists Allow authenticated users full access to checklists; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Allow authenticated users full access to checklists" ON public.commission_checklists TO authenticated USING (true) WITH CHECK (true);
+
+
+--
+-- Name: transaction_events Allow authenticated users full access to events; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Allow authenticated users full access to events" ON public.transaction_events TO authenticated USING (true) WITH CHECK (true);
+
+
+--
+-- Name: commission_evidences Allow authenticated users full access to evidences; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Allow authenticated users full access to evidences" ON public.commission_evidences TO authenticated USING (true) WITH CHECK (true);
+
+
+--
+-- Name: transactions Allow authenticated users full access to transactions; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Allow authenticated users full access to transactions" ON public.transactions TO authenticated USING (true) WITH CHECK (true);
+
+
+--
 -- Name: agents; Type: ROW SECURITY; Schema: public; Owner: -
 --
 
@@ -6075,3 +6112,6 @@ CREATE EVENT TRIGGER pgrst_drop_watch ON sql_drop
 --
 -- PostgreSQL database dump complete
 --
+
+\unrestrict MtJTn9ypjM3Ae3mbgqCxEClI3iJs7h3jQ5kabWTLVgV23b7RIe9z1Jcvi1y2QO9
+
