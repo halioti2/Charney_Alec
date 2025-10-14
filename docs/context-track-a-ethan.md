@@ -30,6 +30,13 @@
 5. Provide stubbed REST endpoints or hooks that Ashley can consume (e.g., `/api/pdf-audit/:id`).  
 6. Record setup/run instructions in `docs/pdf-workflow-readme.md` (create if missing).
 
+## Documents 
+- Deal Sheet (The primary parsed document)
+- Contract Documents (e.g., Contract of Sale, Lease)
+- Invoice
+- Disclosure Forms
+
+
 ## LLM Usage Notes
 - Start prompts with the branch name + explicit directories to avoid cross-track edits.  
 - When generating SQL, remind the model we already added the schema; ask it to generate migrations, not re-create tables.  
