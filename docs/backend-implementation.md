@@ -42,21 +42,21 @@ This document captures the decisions, rationale, and phased checklist for wiring
 
 ### Preflight – Supabase Configuration
 1. **Enable Realtime Sources**
-   - [ ] In the Supabase dashboard, enable Realtime for the target tables (rename to match the live schema: `transactions`, `commission_documents`, `commission_evidences`, `commission_checklists`, `transaction_events`).  
-   - [ ] Document any table-name differences between local migrations (`supabase/schema.sql`) and the hosted project; update migrations or listener targets accordingly.
+   - [x] In the Supabase dashboard, enable Realtime for the target tables (rename to match the live schema: `transactions`, `commission_documents`, `commission_evidences`, `commission_checklists`, `transaction_events`).  
+   - [x] Document any table-name differences between local migrations (`supabase/schema.sql`) and the hosted project; update migrations or listener targets accordingly.
 2. **Validate RLS Policies**
-   - [ ] Ensure authenticated users have `SELECT` access on every table the frontend polls/listens to, even with RLS enabled (e.g., create `USING (auth.uid() IS NOT NULL)` policies for `select`).  
+   - [x] Ensure authenticated users have `SELECT` access on every table the frontend polls/listens to, even with RLS enabled (e.g., create `USING (auth.uid() IS NOT NULL)` policies for `select`).  
    - [ ] Add explicit policies for Realtime channels (insert/update/delete as needed) so the PDF modal listener can receive events.
 3. **Seed Demo Auth Flow**
-   - [ ] Create a dedicated demo user in Supabase Auth (e.g., `demo@veritas.com`).  
-   - [ ] Store credentials in environment variables (`VITE_DEMO_EMAIL`, `VITE_DEMO_PASSWORD` or similar).  
-   - [ ] Add a startup effect in the app shell that silently signs in the demo user so the frontend always runs under the `authenticated` role.
+   - [x] Create a dedicated demo user in Supabase Auth (e.g., `demo@veritas.com`).  
+   - [x] Store credentials in environment variables (`VITE_DEMO_EMAIL`, `VITE_DEMO_PASSWORD` or similar).  
+   - [x] Add a startup effect in the app shell that silently signs in the demo user so the frontend always runs under the `authenticated` role.
 
 ### Stage 1 – Ashley (PDF Verification Flow)
-1. **Context Enhancements**
+1. **Context Enhancements** *(see Track A – Ethan checklist items 2 & 6)*
    - [ ] Extend `DashboardContext` with `transactions`, `setTransactions`, and a `refetchTransactions()` function (calls Supabase via RPC or REST).  
    - [ ] Add a polling hook (30–60 s) inside the context; return a cleanup function.
-2. **Realtime Listener**
+2. **Realtime Listener** *(aligns with Track A – Ethan checklist item 3)*
    - [ ] In `VerificationForm.jsx`, subscribe to the relevant channel (`commission_evidences`, `commission_checklists` or the confirmed production table names).  
    - [ ] Update local modal state as events arrive; be sure to unsubscribe on unmount and guard against duplicate subscriptions.  
    - [ ] After a successful submit, call `refetchTransactions()` before navigating back to the Coordinator tab so polling consumers stay in sync.  

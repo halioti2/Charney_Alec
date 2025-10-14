@@ -25,10 +25,10 @@
 ## Build Checklist
 1. Finalize OCR + parsing plan; document node choices and env requirements.  
 2. Build n8n workflow: intake webhook → OCR → extraction (LLM) → gatekeeper → Supabase writes (`commission_documents`, `commission_evidences`, `commission_checklists`, `transactions` flags).  
-3. Update Supabase migrations so the production schema matches the tables/events above, enable Realtime replication on each, and document any Row Level Security policies required for Ashley’s listener.  
+3. Update Supabase migrations so the production schema matches the tables/events above, enable Realtime replication on each, and document any Row Level Security policies required for Ashley’s listener (maps to Backend Implementation Stage 1 – Realtime Listener).  
 4. Implement Supabase edge functions or serverless endpoints as needed (e.g., signed URLs, checklist status updates).  
 5. Populate golden sample dataset + spreadsheet for accuracy logging; automate comparison if possible.  
-6. Provide stubbed REST endpoints or hooks that Ashley can consume (e.g., `/api/pdf-audit/:id`). Ensure they integrate with the shared `DashboardContext` refresh flow (`refetchTransactions()`).  
+6. Provide stubbed REST endpoints or hooks that Ashley can consume (e.g., `/api/pdf-audit/:id`). Ensure they integrate with the shared `DashboardContext` refresh flow (`refetchTransactions()`) and satisfy Stage 1 Context Enhancements.  
 7. Record setup/run instructions in `docs/pdf-workflow-readme.md` (create if missing).
 
 ## Documents 
