@@ -29,7 +29,7 @@ Use this checklist to migrate the legacy DOM-driven dashboard into idiomatic Rea
   - [X] Tests: RTL tests validating coordinator metrics, queue interactions, and chart rendering.
 
 - [ ] **Commission Modal & Detail** (see `docs/commission-modal-plan.md` & `docs/trid-modal-checklist.md`)
-  - [X] Define a `CommissionRecord` data loader that joins transactions, agents, brokerages, evidence (mock for now).
+  - [X] Define a `CommissionRecord` data loader that joins transactions, agents, brokerages, commission evidences (mock for now).
   - [X] Build React replacements: modal shell, email chain, calculation form, action buttons, TRID view.
   - [X] Add toast/notification hooks for modal actions.
   - [X] Verify printable TRID content and send/share workflow parity.

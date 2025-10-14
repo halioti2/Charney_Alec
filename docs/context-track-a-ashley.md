@@ -33,7 +33,7 @@
 8. Add Storybook entries or screenshots for design review, if possible.
 
 ## Backend Coordination Rules
-- Confirm with Ethan which Supabase tables/events drive the modal (`commission_extractions`, `commission_checklists`, etc.) before wiring data dependencies.  
+- Confirm with Ethan which Supabase tables/events drive the modal (`commission_evidences`, `commission_checklists`, `transaction_events`) before wiring data dependencies.  
 - Coordinate when schema fields change so the PDF listener and dashboard polling stay aligned.  
 - Keep temporary mock fields/component state in the UI—avoid writing placeholder data into Supabase until backend migrations are ready.
 

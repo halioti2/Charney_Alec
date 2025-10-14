@@ -24,7 +24,7 @@
 
 ## Build Checklist
 1. Finalize OCR + parsing plan; document node choices and env requirements.  
-2. Build n8n workflow: intake webhook → OCR → extraction (LLM) → gatekeeper → Supabase writes (`commission_documents`, `commission_extractions`, `commission_checklists`, `transactions` flags).  
+2. Build n8n workflow: intake webhook → OCR → extraction (LLM) → gatekeeper → Supabase writes (`commission_documents`, `commission_evidences`, `commission_checklists`, `transactions` flags).  
 3. Update Supabase migrations so the production schema matches the tables/events above, enable Realtime replication on each, and document any Row Level Security policies required for Ashley’s listener.  
 4. Implement Supabase edge functions or serverless endpoints as needed (e.g., signed URLs, checklist status updates).  
 5. Populate golden sample dataset + spreadsheet for accuracy logging; automate comparison if possible.  

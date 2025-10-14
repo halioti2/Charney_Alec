@@ -47,7 +47,7 @@ This plan splits work across three tracks:
 - **Ethan (Track A)**  
   - Build n8n workflow (OCR node, extractor, gatekeeper, Supabase writes).  
   - Run first accuracy tests with golden set.  
-  - Deliverable: functional backend saving to Supabase evidence tables.
+  - Deliverable: functional backend saving to Supabase commission evidence tables.
 - **Ashley (Track A UI)**  
   - Finish static PDF UI polish; coordinate with Ethan on webhook endpoints.
 - **Erica & Rad (Track B)**  
