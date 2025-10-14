@@ -38,7 +38,7 @@
 - Payments backend integrations are deferred for this sprint. Keep all payout actions in mock mode—trigger UI toasts/state but do not persist to Supabase until Ethan provides live endpoints.  
 - When backend contracts arrive, coordinate with Track A/Ethan to share API contracts and avoid duplicate Supabase calls.  
 - Document any assumptions about future RPCs or Netlify functions in PR descriptions so backend can align.  
-- Track backend blockers (ACH setup, payouts RPC) in Jira comments so the handoff to Ethan stays visible.
+- We will still integrate the backend context from ashleys pdf parse flow into the dashboard display of transactions.
 
 ## LLM Usage Notes
 - Paste branch + do/don’t list up front.  
