@@ -40,6 +40,14 @@ This document captures the decisions, rationale, and phased checklist for wiring
 
 ## Implementation Checklist
 
+### Preflight – Supabase Configuration
+1. **Enable Realtime Sources**
+   - [ ] In the Supabase dashboard, enable Realtime for the target tables (rename to match the live schema: `transactions`, `evidence`/`commission_documents`, `commission_checklists`, `transaction_events` once present).  
+   - [ ] Document any table-name differences between local migrations (`supabase/schema.sql`) and the hosted project; update migrations or listener targets accordingly.
+2. **Validate RLS Policies**
+   - [ ] Ensure authenticated users have `SELECT` access on every table the frontend polls/listens to.  
+   - [ ] Add explicit policies for Realtime channels (e.g., `auth.uid() IS NOT NULL`) so the PDF modal listener can receive events.
+
 ### Stage 1 – Ashley (PDF Verification Flow)
 1. **Context Enhancements**
    - [ ] Extend `DashboardContext` with `transactions`, `setTransactions`, and a `refetchTransactions()` function (calls Supabase via RPC or REST).  
@@ -52,6 +60,9 @@ This document captures the decisions, rationale, and phased checklist for wiring
 3. **Testing & QA**
    - [ ] Manual upload test (PDF → realtime update → submit → Coordinator shows new item immediately).  
    - [ ] Ensure no duplicate listeners by navigating in/out repeatedly.
+4. **Smoke Test Refresh Safety Net**
+   - [ ] Place a temporary debug trigger/button that calls `refetchTransactions()` and confirm the dashboard state updates.  
+   - [ ] Remove or hide the debug trigger before release once integration tests cover the path.
 
 ### Stage 2 – Erica (Payments Tab)
 1. **Consume Context**
