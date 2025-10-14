@@ -211,8 +211,8 @@ export default function PayoutQueue() {
               <th className="p-4 text-center">Net Payout</th>
               <th className="p-4">Date</th>
               <th className="p-4 text-center">ACH Status</th>
-              </tr>
-            </thead>
+            </tr>
+          </thead>
           <tbody>
             {payoutItems.map((item) => (
               <tr
