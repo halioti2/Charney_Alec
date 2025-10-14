@@ -25,10 +25,11 @@
 ## Build Checklist
 1. Finalize OCR + parsing plan; document node choices and env requirements.  
 2. Build n8n workflow: intake webhook → OCR → extraction (LLM) → gatekeeper → Supabase writes (`commission_documents`, `commission_extractions`, `commission_checklists`, `transactions` flags).  
-3. Implement Supabase edge functions or serverless endpoints as needed (e.g., signed URLs, checklist status updates).  
-4. Populate golden sample dataset + spreadsheet for accuracy logging; automate comparison if possible.  
-5. Provide stubbed REST endpoints or hooks that Ashley can consume (e.g., `/api/pdf-audit/:id`).  
-6. Record setup/run instructions in `docs/pdf-workflow-readme.md` (create if missing).
+3. Update Supabase migrations so the production schema matches the tables/events above, enable Realtime replication on each, and document any Row Level Security policies required for Ashley’s listener.  
+4. Implement Supabase edge functions or serverless endpoints as needed (e.g., signed URLs, checklist status updates).  
+5. Populate golden sample dataset + spreadsheet for accuracy logging; automate comparison if possible.  
+6. Provide stubbed REST endpoints or hooks that Ashley can consume (e.g., `/api/pdf-audit/:id`). Ensure they integrate with the shared `DashboardContext` refresh flow (`refetchTransactions()`).  
+7. Record setup/run instructions in `docs/pdf-workflow-readme.md` (create if missing).
 
 ## Documents 
 - Deal Sheet (The primary parsed document)
@@ -42,3 +43,7 @@
 - When generating SQL, remind the model we already added the schema; ask it to generate migrations, not re-create tables.  
 - Prefer idempotent n8n JSON exports; keep credentials redacted.  
 - Ask for unit-test scaffolding or Postman collections to validate endpoints.
+
+## Coordination Notes
+- Communicate when API contracts change so Ashley/Erica/Rad can update their contexts without duplicating data sources.  
+- Document the realtime vs. polling behavior in this file whenever implementation details evolve. 
