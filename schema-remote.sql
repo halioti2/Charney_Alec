@@ -2,7 +2,6 @@
 -- PostgreSQL database dump
 --
 
-\restrict CPRgA7MnaIny4B7FvsjhK5gAMBmRLob6S3riVRLJ9VjBT3KcKfbEn5NlGdeqd8f
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.6 (Homebrew)
@@ -6076,6 +6075,3 @@ CREATE EVENT TRIGGER pgrst_drop_watch ON sql_drop
 --
 -- PostgreSQL database dump complete
 --
-
-\unrestrict CPRgA7MnaIny4B7FvsjhK5gAMBmRLob6S3riVRLJ9VjBT3KcKfbEn5NlGdeqd8f
-
