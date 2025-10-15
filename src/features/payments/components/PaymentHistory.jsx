@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { usePaymentHistory } from '../hooks/usePaymentsAPI.ts';
+import { usePaymentHistory } from '../hooks/usePaymentsAPI';
 
 export default function PaymentHistory() {
   const [statusFilter, setStatusFilter] = useState('all');
@@ -61,7 +61,7 @@ export default function PaymentHistory() {
 
     const badge = badges[status] || badges.ready;
     return (
-      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${badge.bg} ${badge.text}`}>
+      <span className={`inline-flex items-center rounded-sm px-2.5 py-1 text-xs font-bold uppercase ${badge.bg} ${badge.text}`}>
         {badge.label}
       </span>
     );
@@ -70,13 +70,13 @@ export default function PaymentHistory() {
   const getAchBadge = (achReference) => {
     if (achReference) {
       return (
-        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400">
-          Auto-ACH
+        <span className="inline-flex items-center rounded-sm px-2.5 py-1 text-xs font-bold uppercase bg-purple-100 text-purple-800">
+          ACH
         </span>
       );
     }
     return (
-      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400">
+      <span className="inline-flex items-center rounded-sm px-2.5 py-1 text-xs font-bold uppercase bg-gray-100 text-gray-800">
         Manual
       </span>
     );
@@ -122,35 +122,34 @@ export default function PaymentHistory() {
   }
 
   return (
-    <div className="space-y-4">
-      {/* Header with Filters */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div className="card p-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
         <div>
-          <h3 className="text-lg font-semibold text-charney-black dark:text-charney-white">
-            Payment History
+          <h3 className="text-2xl font-black tracking-tighter">
+            Payment <span className="text-charney-red">History</span>
           </h3>
           <p className="text-sm text-charney-gray">
             {historyData.length} payment{historyData.length !== 1 ? 's' : ''} found
           </p>
         </div>
-        
+
         {/* Filters */}
         <div className="flex gap-3">
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3 py-2 border border-charney-light-gray rounded-lg text-sm bg-white dark:bg-charney-charcoal dark:border-charney-gray focus:ring-2 focus:ring-charney-red focus:border-transparent"
+            className="px-3 py-2 border border-charney-light-gray text-sm bg-white dark:bg-charney-charcoal dark:border-charney-gray focus:ring-2 focus:ring-charney-red focus:border-transparent"
           >
             <option value="all">All Status</option>
             <option value="paid">Paid</option>
             <option value="scheduled">Scheduled</option>
             <option value="ready">Ready</option>
           </select>
-          
+
           <select
             value={achFilter}
             onChange={(e) => setAchFilter(e.target.value)}
-            className="px-3 py-2 border border-charney-light-gray rounded-lg text-sm bg-white dark:bg-charney-charcoal dark:border-charney-gray focus:ring-2 focus:ring-charney-red focus:border-transparent"
+            className="px-3 py-2 border border-charney-light-gray text-sm bg-white dark:bg-charney-charcoal dark:border-charney-gray focus:ring-2 focus:ring-charney-red focus:border-transparent"
           >
             <option value="all">All Methods</option>
             <option value="ach">ACH Only</option>
@@ -159,67 +158,50 @@ export default function PaymentHistory() {
         </div>
       </div>
 
-      {/* Table */}
-      <div className="rounded-xl border border-charney-light-gray bg-white shadow-sm dark:border-charney-gray/70 dark:bg-charney-charcoal/50 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-charney-cream dark:bg-charney-slate">
-              <tr>
-                <th className="px-4 py-3 text-left text-sm font-medium text-charney-black dark:text-charney-white">
-                  Agent Name
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-charney-black dark:text-charney-white">
-                  Property Address
-                </th>
-                <th className="px-4 py-3 text-right text-sm font-medium text-charney-black dark:text-charney-white">
-                  Amount
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-charney-black dark:text-charney-white">
-                  Payout Date
-                </th>
-                <th className="px-4 py-3 text-center text-sm font-medium text-charney-black dark:text-charney-white">
-                  Status
-                </th>
-                <th className="px-4 py-3 text-center text-sm font-medium text-charney-black dark:text-charney-white">
-                  Method
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-charney-black dark:text-charney-white">
-                  Reference
-                </th>
+      <div className="overflow-x-auto" role="region" aria-label="Payment history">
+        <table className="w-full text-left text-sm">
+          <thead className="text-xs uppercase">
+            <tr>
+              <th className="p-4">Agent</th>
+              <th className="p-4">Property</th>
+              <th className="p-4 text-center">Amount</th>
+              <th className="p-4">Payout Date</th>
+              <th className="p-4 text-center">Status</th>
+              <th className="p-4 text-center">Method</th>
+              <th className="p-4">Reference</th>
+            </tr>
+          </thead>
+          <tbody>
+            {historyData.map((item) => (
+              <tr
+                key={item.id}
+                className="cursor-pointer hover:bg-charney-cream/50 dark:hover:bg-charney-cream/10"
+              >
+                <td className="p-4 font-bold">
+                  {item.agent.full_name}
+                </td>
+                <td className="p-4 text-charney-gray">
+                  {item.transaction.property_address}
+                </td>
+                <td className="p-4 text-center text-charney-gray">
+                  {formatCurrency(item.payout_amount)}
+                </td>
+                <td className="p-4 text-charney-gray">
+                  {formatDate(item.paid_at || item.scheduled_at)}
+                </td>
+                <td className="p-4 text-center">
+                  {getStatusBadge(item.status)}
+                </td>
+                <td className="p-4 text-center">
+                  {getAchBadge(item.ach_reference)}
+                </td>
+                <td className="p-4 text-charney-gray font-mono">
+                  {item.ach_reference || item.id}
+                </td>
               </tr>
-            </thead>
-            <tbody className="divide-y divide-charney-light-gray dark:divide-charney-gray/30">
-              {historyData.map((item) => (
-                <tr 
-                  key={item.id}
-                  className="hover:bg-charney-cream/50 dark:hover:bg-charney-slate/30"
-                >
-                  <td className="px-4 py-3 text-sm font-medium text-charney-black dark:text-charney-white">
-                    {item.agent.full_name}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-charney-gray">
-                    {item.transaction.property_address}
-                  </td>
-                  <td className="px-4 py-3 text-sm font-semibold text-right text-charney-black dark:text-charney-white">
-                    {formatCurrency(item.payout_amount)}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-charney-gray">
-                    {formatDate(item.paid_at || item.scheduled_at)}
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    {getStatusBadge(item.status)}
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    {getAchBadge(item.ach_reference)}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-charney-gray font-mono">
-                    {item.ach_reference || item.id}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+            ))}
+          </tbody>
+        </table>
       </div>
 
       {/* Summary Stats */}

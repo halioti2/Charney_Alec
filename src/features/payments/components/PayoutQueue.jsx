@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useToast } from '../../../context/ToastContext.jsx';
-import { usePayoutQueue, usePayoutScheduling } from '../hooks/usePaymentsAPI.ts';
+import { usePayoutQueue, usePayoutScheduling } from '../hooks/usePaymentsAPI';
 import SchedulePayoutModal from './SchedulePayoutModal.jsx';
 
 export default function PayoutQueue() {
@@ -174,103 +174,86 @@ export default function PayoutQueue() {
   }
 
   return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-lg font-semibold text-charney-black dark:text-charney-white">
-            Payout Queue
-          </h3>
-          <p className="text-sm text-charney-gray">
-            {payoutItems.length} transactions ready for payout
-          </p>
-        </div>
-        
-        {selectedItems.size > 0 && (
+    <div className="card p-6">
+      <h3 className="mb-4 text-2xl font-black tracking-tighter">
+        Payout <span className="text-charney-red">Queue</span>
+      </h3>
+
+      {/* Action Bar */}
+      {selectedItems.size > 0 && (
+        <div className="mb-4 flex items-center justify-between bg-charney-cream/30 dark:bg-charney-slate/30 rounded-sm p-3">
+          <span className="text-sm font-medium text-charney-black dark:text-charney-white">
+            {selectedItems.size} transaction{selectedItems.size !== 1 ? 's' : ''} selected • Total: {formatCurrency(totalPayout)}
+          </span>
           <button
             onClick={handleSchedulePayout}
-            className="bg-charney-red text-charney-white px-4 py-2 rounded-lg font-medium hover:bg-charney-black transition-colors"
+            className="bg-charney-red text-white px-4 py-2 text-sm font-bold uppercase hover:bg-charney-black transition-colors"
           >
-            Schedule Payout ({selectedItems.size})
+            Schedule Payout
           </button>
-        )}
-      </div>
+        </div>
+      )}
 
-      {/* Table */}
-      <div className="rounded-xl border border-charney-light-gray bg-white shadow-sm dark:border-charney-gray/70 dark:bg-charney-charcoal/50 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-charney-cream dark:bg-charney-slate">
-              <tr>
-                <th className="px-4 py-3 text-left">
+      <div className="overflow-x-auto" role="region" aria-label="Payout queue">
+        <table className="w-full text-left text-sm">
+          <thead className="text-xs uppercase">
+            <tr>
+              <th className="p-4">
+                <input
+                  type="checkbox"
+                  checked={selectedItems.size === payoutItems.length && payoutItems.length > 0}
+                  onChange={handleSelectAll}
+                  className="rounded border-charney-gray focus:ring-charney-red"
+                />
+              </th>
+              <th className="p-4">Agent</th>
+              <th className="p-4">Property</th>
+              <th className="p-4 text-center">Net Payout</th>
+              <th className="p-4">Date</th>
+              <th className="p-4 text-center">ACH Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {payoutItems.map((item) => (
+              <tr
+                key={item.id}
+                className="cursor-pointer hover:bg-charney-cream/50 dark:hover:bg-charney-cream/10"
+              >
+                <td className="p-4">
                   <input
                     type="checkbox"
-                    checked={selectedItems.size === payoutItems.length && payoutItems.length > 0}
-                    onChange={handleSelectAll}
+                    checked={selectedItems.has(item.id)}
+                    onChange={() => handleSelectItem(item.id)}
                     className="rounded border-charney-gray focus:ring-charney-red"
                   />
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-charney-black dark:text-charney-white">
-                  Agent Name
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-charney-black dark:text-charney-white">
-                  Property Address
-                </th>
-                <th className="px-4 py-3 text-right text-sm font-medium text-charney-black dark:text-charney-white">
-                  Net Payout
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-charney-black dark:text-charney-white">
-                  Created Date
-                </th>
-                <th className="px-4 py-3 text-center text-sm font-medium text-charney-black dark:text-charney-white">
-                  ACH Ready
-                </th>
+                </td>
+                <td className="p-4 font-bold">
+                  {item.agent.full_name}
+                </td>
+                <td className="p-4 text-charney-gray">
+                  {item.transaction.property_address}
+                </td>
+                <td className="p-4 text-center text-charney-gray">
+                  {formatCurrency(item.payout_amount)}
+                </td>
+                <td className="p-4 text-charney-gray">
+                  {formatDate(item.created_at)}
+                </td>
+                <td className="p-4 text-center">
+                  {item.auto_ach ? (
+                    <span className="inline-flex items-center rounded-sm px-2.5 py-1 text-xs font-bold uppercase bg-green-100 text-green-800">
+                      ACH
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center rounded-sm px-2.5 py-1 text-xs font-bold uppercase bg-yellow-100 text-yellow-800">
+                      Manual
+                    </span>
+                  )}
+                </td>
               </tr>
-            </thead>
-            <tbody className="divide-y divide-charney-light-gray dark:divide-charney-gray/30">
-              {payoutItems.map((item) => (
-                <tr 
-                  key={item.id}
-                  className={`hover:bg-charney-cream/50 dark:hover:bg-charney-slate/30 ${
-                    selectedItems.has(item.id) ? 'bg-charney-cream/30 dark:bg-charney-slate/20' : ''
-                  }`}
-                >
-                  <td className="px-4 py-3">
-                    <input
-                      type="checkbox"
-                      checked={selectedItems.has(item.id)}
-                      onChange={() => handleSelectItem(item.id)}
-                      className="rounded border-charney-gray focus:ring-charney-red"
-                    />
-                  </td>
-                  <td className="px-4 py-3 text-sm font-medium text-charney-black dark:text-charney-white">
-                    {item.agent.full_name}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-charney-gray">
-                    {item.transaction.property_address}
-                  </td>
-                  <td className="px-4 py-3 text-sm font-semibold text-right text-charney-black dark:text-charney-white">
-                    {formatCurrency(item.payout_amount)}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-charney-gray">
-                    {formatDate(item.created_at)}
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    {item.auto_ach ? (
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
-                        ACH Ready
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">
-                        Manual
-                      </span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+            ))}
+          </tbody>
+        </table>
       </div>
 
       {/* Running Total Panel */}
