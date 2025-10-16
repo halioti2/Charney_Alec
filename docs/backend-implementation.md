@@ -46,33 +46,43 @@ This document captures the decisions, rationale, and phased checklist for wiring
    - [x] Document any table-name differences between local migrations (`supabase/schema.sql`) and the hosted project; update migrations or listener targets accordingly.
 2. **Validate RLS Policies**
    - [x] Ensure authenticated users have `SELECT` access on every table the frontend polls/listens to, even with RLS enabled (e.g., create `USING (auth.uid() IS NOT NULL)` policies for `select`).  
-   - [ ] Add explicit policies for Realtime channels (insert/update/delete as needed) so the PDF modal listener can receive events.
+   - [X] Add explicit policies for Realtime channels (insert/update/delete as needed) so the PDF modal listener can receive events.
 3. **Seed Demo Auth Flow**
    - [x] Create a dedicated demo user in Supabase Auth (e.g., `demo@veritas.com`).  
    - [x] Store credentials in environment variables (`VITE_DEMO_EMAIL`, `VITE_DEMO_PASSWORD` or similar).  
    - [x] Add a startup effect in the app shell that silently signs in the demo user so the frontend always runs under the `authenticated` role.
 
-### Stage 1 – Ashley (PDF Verification Flow)
-1. **Context Enhancements** *(see Track A – Ethan checklist items 2 & 6)*
-   - [ ] Extend `DashboardContext` with `transactions`, `setTransactions`, and a `refetchTransactions()` function (calls Supabase via RPC or REST).  
-   - [ ] Add a polling hook (30–60 s) inside the context; return a cleanup function.
-2. **Realtime Listener** *(aligns with Track A – Ethan checklist item 3)*
-   - [ ] In `VerificationForm.jsx`, subscribe to the relevant channel (`commission_evidences`, `commission_checklists` or the confirmed production table names).  
-   - [ ] Update local modal state as events arrive; be sure to unsubscribe on unmount and guard against duplicate subscriptions.  
-   - [ ] After a successful submit, call `refetchTransactions()` before navigating back to the Coordinator tab so polling consumers stay in sync.  
-   - [ ] Verify Supabase Row Level Security and Realtime replication settings allow the listener to receive events while the modal is open.
+### Phase 1A – Auto-Approval Happy Path (See `docs/parse-pdf-user-journey.md#path-a` & Track A checklist items 2–3)
+1. **Workflow Finalization**
+   - [x] Confirm n8n promotes clean `commission_evidences` payloads to `transactions.final_*` when `requires_review = false`.  
+   - [x] Ensure `transactions.status` transitions `in_queue → in_review → approved` with `intake_status` updates.  
+   - [x] Emit `transaction_events` for parsing success and auto-approval.
+2. **Realtime Verification**
+   - [x] Validate queue table receives inserts/updates via Realtime subscription (Coordinator view).  
+   - [x] Confirm polling tabs respect updated totals after `refetchTransactions()`.
+3. **Demo QA**
+   - [x] Run end-to-end email → approved flow using sample PDF; verify UI changes without manual input.
+
+### Phase 1B – Manual Verification Flow (See `docs/parse-pdf-user-journey.md#path-b` & Track A checklist items 4–6)
+1. **Context Enhancements**
+   - [x] Extend `DashboardContext` with `transactions`, `setTransactions`, `refetchTransactions()`, and a polling hook (30–60 s).  
+   - [x] Share the context API with all tabs; ensure hybrid contract documented.  
+2. **Verification Modal Integration**
+   - [x] In `VerificationForm.jsx`, subscribe to `commission_evidences`/`commission_checklists` for modal open events and guard cleanup.  
+   - [x] On modal open, fetch latest evidence record to pre-fill fields; display confidence badges and checklist state.  
+   - [x] On submit, call backend endpoint/RPC to write `transactions.final_*`, create `transaction_events`, update `status = 'approved'`, and invoke `refetchTransactions()`.
 3. **Testing & QA**
-   - [ ] Manual upload test (PDF → realtime update → submit → Coordinator shows new item immediately).  
-   - [ ] Ensure no duplicate listeners by navigating in/out repeatedly.
+   - [ ] Manual review scenario: email → `needs_review` → coordinator edits → approved (Coordinator queue + tabs refreshed).  
+   - [ ] Navigate in/out of modal repeatedly to confirm no duplicate listeners or stale evidence.
 4. **Smoke Test Refresh Safety Net**
-   - [ ] Place a temporary debug trigger/button that calls `refetchTransactions()` and confirm the dashboard state updates.  
-   - [ ] Remove or hide the debug trigger before release once integration tests cover the path.
+   - [ ] Place a temporary debug trigger that calls `refetchTransactions()`; confirm state updates, then remove before release once automated tests cover the path.
 
 ### Stage 2 – Erica (Payments Tab)
 1. **Consume Context**
    - [ ] Use the polling data (same hook as Coordinator) to populate the Payments tab.  
    - [ ] Trigger `refetchTransactions()` after scheduling/approving payouts so totals stay current.  
-   - [ ] For the MVP, read-only data comes from the context produced in Stage 1. No direct Supabase payouts integration yet.
+   - [ ] For the MVP, read-only data comes from the context produced in Stage 1. No direct Supabase payouts integration yet.  
+   - [ ] Double-check shared context + mock data for regressions before merging (avoid reintroducing legacy fake-fetch hooks).
 2. **Supabase Writes**
    - [ ] (Deferred) Implement mutations via Netlify functions or Supabase RPCs once backend endpoints exist.  
    - [ ] Surface ACH flags and failure states using the mock data contract already defined.  
@@ -95,11 +105,11 @@ This document captures the decisions, rationale, and phased checklist for wiring
 ---
 
 ## Next Steps
-- Finalize the polling hook in `DashboardContext` and share the API (data + `refetchTransactions`).  
+- Complete Phase 1A/1B tasks, then finalize the polling hook in `DashboardContext` and share the API (data + `refetchTransactions`).  
 - Audit `supabase/schema.sql` (and pending migrations) so it matches the tables referenced by this plan; add or rename tables as needed before enabling listeners.  
 - Coordinate with backend (Ethan) on Supabase RPC signatures for transactions and payouts and document any required PostgREST policies for Realtime access.  
-- Update the track context packs with the staged timeline and pointers to this file.  
-- Schedule cross-track testing once Stage 1 is complete to verify the manual refresh path and the single Realtime subscription lifecycle.
+- Update the track context packs with the phased timeline and pointers to this file / `docs/parse-pdf-user-journey.md`.  
+- Schedule cross-track testing once Phase 1B is complete to verify the manual refresh path and the single Realtime subscription lifecycle.
 
 ### Caveats (MVP RLS + Realtime)
 
