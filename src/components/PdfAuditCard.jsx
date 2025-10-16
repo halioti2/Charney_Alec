@@ -1,18 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import { useDashboardContext } from '../context/DashboardContext.jsx';
-import { fetchTransactionForVerification, approveTransaction } from '../lib/supabaseService.js';
+import { fetchTransactionForVerification } from '../lib/supabaseService.js';
+import { supabase } from '../lib/supabaseClient.js';
 import DealSheetViewer from '../components/DealSheetViewer.jsx';
 import ConfidenceBadge from '../components/ConfidenceBadge.jsx';
-import VerificationForm from '../components/VerificationForm.jsx';
-import ComplianceChecklist from '../components/ComplianceChecklist.jsx';
 
 const checklistItemsConfig = ["Contract of Sale", "Invoice", "Disclosure Forms"];
 
 const PdfAuditCard = () => {
   const { isPdfAuditVisible, currentAuditId, hidePdfAudit, refetchCoordinatorData } = useDashboardContext();
   const [isSubmitDisabled, setIsSubmitDisabled] = useState(true);
-  const [formData, setFormData] = useState({});
-  const [attachedFiles, setAttachedFiles] = useState({});
+  const [formData, setFormData] = useState({
+    final_broker_agent_name: '',
+    property_address: '',
+    final_sale_price: '',
+    final_listing_commission_percent: '',
+    final_buyer_commission_percent: '',
+    final_agent_split_percent: '',
+    final_co_broker_agent_name: '',
+    final_co_brokerage_firm_name: ''
+  });
+  const [checklistResponses, setChecklistResponses] = useState({});
   const [transactionData, setTransactionData] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -30,16 +38,22 @@ const PdfAuditCard = () => {
             
             // Initialize form with existing data
             setFormData({
-              property_address: data.property_address || extractionData.property_address || "",
-              final_sale_price: data.final_sale_price || extractionData.sale_price || 0,
-              gci_total: calculateGCI(data, extractionData),
               final_broker_agent_name: data.final_broker_agent_name || extractionData.broker_agent_name || "",
-              final_agent_split_percent: data.final_agent_split_percent || extractionData.agent_split_percent || 0,
-              final_listing_commission_percent: data.final_listing_commission_percent || extractionData.listing_side_commission_percent || 0,
-              final_buyer_commission_percent: data.final_buyer_commission_percent || extractionData.buyer_side_commission_percent || 0,
+              property_address: data.property_address || extractionData.property_address || "",
+              final_sale_price: data.final_sale_price || extractionData.sale_price || "",
+              final_listing_commission_percent: data.final_listing_commission_percent || extractionData.listing_side_commission_percent || "",
+              final_buyer_commission_percent: data.final_buyer_commission_percent || extractionData.buyer_side_commission_percent || "",
+              final_agent_split_percent: data.final_agent_split_percent || extractionData.agent_split_percent || "",
               final_co_broker_agent_name: data.final_co_broker_agent_name || extractionData.co_broker_agent_name || "",
               final_co_brokerage_firm_name: data.final_co_brokerage_firm_name || extractionData.co_brokerage_firm_name || "",
             });
+
+            // Initialize checklist
+            const initialChecklist = {};
+            checklistItemsConfig.forEach(item => {
+              initialChecklist[item] = false;
+            });
+            setChecklistResponses(initialChecklist);
           }
         })
         .catch(error => {
@@ -51,56 +65,82 @@ const PdfAuditCard = () => {
     }
   }, [isPdfAuditVisible, currentAuditId]);
 
-  // Calculate GCI from transaction data
-  const calculateGCI = (transaction, extractionData) => {
-    const salePrice = transaction.final_sale_price || extractionData.sale_price || 0;
-    const listingRate = transaction.final_listing_commission_percent || extractionData.listing_side_commission_percent || 0;
-    const buyerRate = transaction.final_buyer_commission_percent || extractionData.buyer_side_commission_percent || 0;
-    return salePrice * ((listingRate + buyerRate) / 100);
-  };
-
+  // Check if form is valid for submission
   useEffect(() => {
-    const allItemsAttached = checklistItemsConfig.every(item => attachedFiles[item]);
-    setIsSubmitDisabled(!allItemsAttached);
-  }, [attachedFiles]);
+    const requiredFields = ['final_broker_agent_name', 'property_address', 'final_sale_price'];
+    const isFormValid = requiredFields.every(field => formData[field]?.toString().trim());
+    const allItemsChecked = checklistItemsConfig.every(item => checklistResponses[item]);
+    setIsSubmitDisabled(!(isFormValid && allItemsChecked));
+  }, [formData, checklistResponses]);
 
   const handleFormChange = (e) => {
     const { name, value } = e.target;
     setFormData(prevData => ({ ...prevData, [name]: value }));
   };
 
-  const handleChecklistItemToggle = (itemName) => {
-    const newFiles = { ...attachedFiles };
-    delete newFiles[itemName];
-    setAttachedFiles(newFiles);
+  const handleChecklistChange = (item, checked) => {
+    setChecklistResponses(prev => ({
+      ...prev,
+      [item]: checked
+    }));
   };
 
   const handleSubmit = async () => {
-    if (!transactionData || !currentAuditId) {
-      console.error('No transaction data available for submission');
+    if (!transactionData || !currentAuditId || isSubmitDisabled || isSubmitting) {
       return;
     }
 
     setIsSubmitting(true);
     try {
       console.log("Submitting for approval...");
-      console.log("Form Data:", formData);
-      console.log("Attached Files:", attachedFiles);
       
-      // Submit the verified data to Supabase
-      const success = await approveTransaction(currentAuditId, formData);
+      // Clean and validate the form data before sending
+      const cleanedFormData = {
+        final_broker_agent_name: formData.final_broker_agent_name?.trim() || '',
+        property_address: formData.property_address?.trim() || '',
+        final_sale_price: formData.final_sale_price ? parseFloat(formData.final_sale_price) || 0 : 0,
+        final_listing_commission_percent: formData.final_listing_commission_percent ? parseFloat(formData.final_listing_commission_percent) || 0 : 0,
+        final_buyer_commission_percent: formData.final_buyer_commission_percent ? parseFloat(formData.final_buyer_commission_percent) || 0 : 0,
+        final_agent_split_percent: formData.final_agent_split_percent ? parseFloat(formData.final_agent_split_percent) || 0 : 0,
+        final_co_broker_agent_name: formData.final_co_broker_agent_name?.trim() || '',
+        final_co_brokerage_firm_name: formData.final_co_brokerage_firm_name?.trim() || ''
+      };
+
+      console.log("Cleaned Form Data:", cleanedFormData);
+      console.log("Checklist Responses:", checklistResponses);
       
-      if (success) {
-        console.log("Transaction approved successfully");
-        // Refresh coordinator data to show updated status
-        await refetchCoordinatorData();
-        hidePdfAudit();
-      } else {
-        console.error("Failed to approve transaction");
-        // In a real app, you'd show an error message to the user
+      // Get current session for auth token
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('No active session');
+
+      // Call Netlify function
+      const response = await fetch('/.netlify/functions/approve-transaction', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({
+          transaction_id: currentAuditId,
+          final_data: cleanedFormData,
+          checklist_responses: checklistResponses
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to approve transaction');
       }
+
+      const result = await response.json();
+      console.log("Transaction approved successfully:", result);
+      
+      // Refresh coordinator data to show updated status
+      await refetchCoordinatorData();
+      hidePdfAudit();
     } catch (error) {
       console.error("Error submitting:", error);
+      alert('Failed to approve transaction: ' + error.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -161,15 +201,91 @@ const PdfAuditCard = () => {
               </div>
 
               <div className="space-y-8 dark:text-charney-white">
-                <VerificationForm
-                  formData={formData}
-                  onChange={handleFormChange}
-                />
-                <ComplianceChecklist
-                  items={checklistItemsConfig}
-                  attachedFiles={attachedFiles}
-                  onFileDrop={setAttachedFiles}
-                />
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold">Verification Form</h3>
+                  
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Broker/Agent Name</label>
+                    <input
+                      type="text"
+                      name="final_broker_agent_name"
+                      value={formData.final_broker_agent_name}
+                      onChange={handleFormChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-charney-red dark:bg-charney-charcoal dark:border-charney-gray dark:text-charney-white"
+                      placeholder="Enter broker/agent name"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Property Address</label>
+                    <input
+                      type="text"
+                      name="property_address"
+                      value={formData.property_address}
+                      onChange={handleFormChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-charney-red dark:bg-charney-charcoal dark:border-charney-gray dark:text-charney-white"
+                      placeholder="Enter property address"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Sale Price</label>
+                    <input
+                      type="number"
+                      name="final_sale_price"
+                      value={formData.final_sale_price}
+                      onChange={handleFormChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-charney-red dark:bg-charney-charcoal dark:border-charney-gray dark:text-charney-white"
+                      placeholder="Enter sale price"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Listing Commission %</label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        name="final_listing_commission_percent"
+                        value={formData.final_listing_commission_percent}
+                        onChange={handleFormChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-charney-red dark:bg-charney-charcoal dark:border-charney-gray dark:text-charney-white"
+                        placeholder="3.0"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Buyer Commission %</label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        name="final_buyer_commission_percent"
+                        value={formData.final_buyer_commission_percent}
+                        onChange={handleFormChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-charney-red dark:bg-charney-charcoal dark:border-charney-gray dark:text-charney-white"
+                        placeholder="2.5"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold">Document Checklist</h3>
+                  {checklistItemsConfig.map((item) => (
+                    <div key={item} className="flex items-center">
+                      <input
+                        type="checkbox"
+                        id={item}
+                        checked={checklistResponses[item] || false}
+                        onChange={(e) => handleChecklistChange(item, e.target.checked)}
+                        className="h-4 w-4 text-charney-red focus:ring-charney-red border-gray-300 rounded"
+                      />
+                      <label htmlFor={item} className="ml-2 text-sm">
+                        {item}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+
                 <button
                   onClick={handleSubmit}
                   disabled={isSubmitDisabled || isSubmitting}

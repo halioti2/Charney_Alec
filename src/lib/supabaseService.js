@@ -77,55 +77,6 @@ export async function fetchTransactionForVerification(transactionId) {
 }
 
 /**
- * Update transaction with final verified data and mark as approved
- * @param {string} transactionId - The transaction ID
- * @param {Object} finalData - The verified data to update
- * @returns {Promise<boolean>} Success status
- */
-export async function approveTransaction(transactionId, finalData) {
-  try {
-    // Update transaction with final data
-    const { error: updateError } = await supabase
-      .from('transactions')
-      .update({
-        ...finalData,
-        status: 'approved',
-        intake_status: 'completed',
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', transactionId);
-
-    if (updateError) {
-      console.error('Error updating transaction:', updateError);
-      throw updateError;
-    }
-
-    // Create transaction event for approval
-    const { error: eventError } = await supabase
-      .from('transaction_events')
-      .insert({
-        transaction_id: transactionId,
-        event_type: 'approved',
-        actor_name: 'Coordinator',
-        metadata: {
-          action: 'manual_verification',
-          final_data: finalData,
-        },
-      });
-
-    if (eventError) {
-      console.error('Error creating transaction event:', eventError);
-      // Don't throw here - the transaction update succeeded
-    }
-
-    return true;
-  } catch (error) {
-    console.error('Failed to approve transaction:', error);
-    return false;
-  }
-}
-
-/**
  * Subscribe to realtime changes on transactions table
  * @param {Function} callback - Function to call when changes occur
  * @returns {Object} Supabase subscription object
