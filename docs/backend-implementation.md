@@ -142,20 +142,23 @@ const subscribeToTransactionUpdates = () => {
 5. **Netlify Function Integration**
    - [x] Replace direct Supabase calls with `approve-transaction.js` function
    - [x] Add proper form validation and data type conversion
-   - [x] Implement JWT authentication for secure server-side updates### **Stage 2: Payments Tab Backend Integration**  
-**Scope:** Only wire the Payments tab components and transaction tracking
+   - [x] Implement JWT authentication for secure server-side updates
+### **Stage 2: Payments Tab Backend Integration**  
+**Scope:** Wire Payments tab components with complete payment workflow functionality
 
 **Goals:**
-- Connect payments view to transaction data
-- Enable payment status tracking
-- Wire payment-related realtime updates
-- Ensure payments team can track commission payments
+- Connect payments view to transaction and payout data
+- Enable complete payment workflow (creation, scheduling, processing, status tracking)
+- Implement automatic payout creation when transactions are approved
+- Wire payment-related realtime updates for instant status changes
+- Ensure payments team can manage full commission payment lifecycle
 
 **Components in Scope:**
 - `PaymentsView` component
-- Payment tracking components
-- Transaction status updates for payments
-- Payment-related manual refresh
+- `PayoutQueue` component - Wire to real payout data with working payment actions
+- `PaymentHistory` component - Connect to real transaction/payment data
+- Payment operation buttons (Schedule, Mark Paid, Process ACH)
+- Payment-related manual refresh and status updates
 
 **Components NOT in Scope:**
 - Broker tab components  
@@ -165,45 +168,88 @@ const subscribeToTransactionUpdates = () => {
 **DashboardContext Extensions for Stage 2:**
 ```javascript
 // Add payments-specific state and methods
-const [paymentData, setPaymentData] = useState([])
-const [paymentTransactions, setPaymentTransactions] = useState([])
+const [payouts, setPayouts] = useState([])
+const [isRefreshingPayouts, setIsRefreshingPayouts] = useState(false)
 
-const refetchPaymentData = async () => {
-  // Refresh payment-related data
+const fetchPayouts = async () => {
+  // Fetch commission payouts from Supabase
 }
 
-const subscribeToPaymentUpdates = () => {
-  // Realtime listeners for payment updates
+const refetchPayouts = async () => {
+  setIsRefreshingPayouts(true);
+  await fetchPayouts();
+  setIsRefreshingPayouts(false);
+}
+
+const subscribeToPayoutUpdates = () => {
+  // Realtime listeners for payout status changes
 }
 ```
 
 **Netlify Functions Required:**
-- [ ] `process-payment.js` - Handle payment processing and status updates
-- [ ] `update-payment-status.js` - Update transaction payment status
-const [paymentData, setPaymentData] = useState([])
-const [paymentTransactions, setPaymentTransactions] = useState([])
+- [ ] `create_commission_payout` (Supabase RPC) - Auto-create payouts when transactions approved
+- [ ] `schedule-payout.js` - Handle payment scheduling with validation
+- [ ] `update-payout-status.js` - Update payout status (pending → processing → paid)
+- [ ] `process-ach-payment.js` - Process ACH payments with proper error handling
 
-const refetchPaymentData = async () => {
-  // Refresh payment-related data
-}
+**Database Integration:**
+- [ ] Commission payouts automatically created via RPC when transactions reach approved status
+- [ ] Payout data accessible through shared DashboardContext polling
+- [ ] Real-time updates for payment status changes
+- [ ] Audit trail for all payment operations through transaction_events
 
-const subscribeToPaymentUpdates = () => {
-  // Realtime listeners for payment updates
-}
-```
+#### **Stage 2.1: Commission Payout RPC Function**
+- [ ] Create `create_commission_payout` RPC function in Supabase
+- [ ] Add function to migration file: `supabase/migrations/[timestamp]_create_commission_payout_rpc.sql`
+- [ ] Test RPC function with sample transaction data
+- [ ] Verify RLS policies allow authenticated users to execute function
+- [ ] Document function parameters and return values
 
-1. **Consume Context**
-   - [ ] Use the polling data (same hook as Coordinator) to populate the Payments tab.  
-   - [ ] Trigger `refetchTransactions()` after scheduling/approving payouts so totals stay current.  
-   - [ ] For the MVP, read-only data comes from the context produced in Stage 1. No direct Supabase payouts integration yet.  
-   - [ ] Double-check shared context + mock data for regressions before merging (avoid reintroducing legacy fake-fetch hooks).
-2. **Supabase Writes**
-   - [ ] (Deferred) Implement mutations via Netlify functions or Supabase RPCs once backend endpoints exist.  
-   - [ ] Surface ACH flags and failure states using the mock data contract already defined.  
-   - [ ] Coordinate with backend to reuse the shared refresh helper (`refetchTransactions()` or follow-up RPCs) immediately after any mutation.
-3. **Testing**
-   - [ ] Verify manual refresh after actions.  
-   - [ ] Confirm nothing blocks PDF realtime operations (shared context must remain stable).
+#### **Stage 2.2: Auto-Payout Integration with Approval Flows**
+- [ ] Update `netlify/functions/approve-transaction.js` to call RPC after transaction approval
+- [ ] Add Supabase RPC node to n8n workflow after auto-approval
+- [ ] Add error handling for payout creation failures in both flows
+- [ ] Test end-to-end: approval → payout creation → audit trail
+- [ ] Document RPC integration with code comments per strategy
+
+#### **Stage 2.3: Payment Operation Functions**
+- [ ] Create `netlify/functions/schedule-payout.js` for payment scheduling
+- [ ] Create `netlify/functions/update-payout-status.js` for status updates
+- [ ] Create `netlify/functions/process-ach-payment.js` for ACH processing
+- [ ] Add proper authentication and error handling to all payment functions
+- [ ] Test each function independently with sample data
+
+#### **Stage 2.4: Frontend Context Integration**
+- [ ] Extend `DashboardContext` with payout-related state (`payouts`, `setPayouts`, `isRefreshingPayouts`)
+- [ ] Create `fetchPayouts()` function in `src/lib/supabaseService.js`
+- [ ] Use the polling data (same hook as Coordinator) to populate the Payments tab
+- [ ] Update `PayoutQueue` component to consume real payout data from `DashboardContext`
+- [ ] Update `PaymentHistory` component to consume real transaction data from `DashboardContext`
+- [ ] Replace mock data imports with `DashboardContext` consumption
+
+#### **Stage 2.5: Payment Actions Integration**
+- [ ] Wire "Schedule Payout" button to call `schedule-payout.js` function
+- [ ] Wire "Mark as Paid" button to call `update-payout-status.js` function
+- [ ] Wire "Process ACH" button to call `process-ach-payment.js` function
+- [ ] Trigger `refetchTransactions()` and `refetchPayouts()` after scheduling/approving payouts so totals stay current
+- [ ] Add manual refresh capability for payments tab
+- [ ] Surface ACH flags and failure states using real data from Supabase
+
+#### **Stage 2.6: Testing & Validation**
+- [ ] Test complete flow: Transaction Approval → Payout Creation → Payment Scheduling → UI Display
+- [ ] Verify both auto and manual approval paths create payouts correctly
+- [ ] Test all payment button actions (schedule, mark paid, process ACH)
+- [ ] Test error scenarios (invalid payments, ACH failures, network errors)
+- [ ] Verify manual refresh after actions updates totals correctly
+- [ ] Confirm nothing blocks PDF realtime operations (shared context must remain stable)
+- [ ] Validate RLS policies work correctly for payout and payment access
+
+#### **Stage 2.7: Integration Quality Assurance**
+- [ ] Coordinate with backend to reuse the shared refresh helper (`refetchTransactions()`) immediately after any mutation
+- [ ] Ensure payments tab uses correct `activeView` value (`payments`) for component isolation
+- [ ] Test that all payment operations properly update the UI state
+- [ ] Verify payment status changes reflect immediately in PaymentHistory
+- [ ] Test edge cases: rapid button clicks, network failures, invalid data
 
 ### **Stage 3: Broker & Commission Tracker Integration (Future)**
 **Scope:** Complete remaining dashboard tabs after frontend UI is ready
