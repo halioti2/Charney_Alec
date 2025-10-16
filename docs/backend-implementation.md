@@ -15,11 +15,18 @@ This document captures the decisions, rationale, and phased checklist for wiring
 2. **Reuse Existing Context Architecture**  
    - Extend `DashboardContext` (similar to the prior `AuthContext` pattern) to own data fetching, manual refresh, and (later) realtime wiring.  
    - Frontend components consume data from context; no tab should call Supabase directly.
+   - **All database writes must go through secure Netlify functions** to maintain proper authentication and data validation.
 
 3. **Phased Rollout by Tab (Updated Scope)**
    - **Stage 1: Coordinator Tab Only** - Wire coordinator queue, verification modal, and PDF workflow
    - **Stage 2: Payments Tab Only** - Hook up payments view and transaction tracking  
    - **Stage 3: Broker & Commission Tracker** - Deferred until frontend UI changes are completed on these sections
+
+4. **Netlify Functions for Security**
+   - **All database mutations** (inserts, updates, deletes) must use authenticated Netlify functions
+   - **Read operations** can use direct Supabase client calls from frontend for better performance
+   - **Authentication** handled via JWT tokens passed to functions
+   - **Data validation** and business logic enforced server-side
 
 ---
 
@@ -52,7 +59,11 @@ This document captures the decisions, rationale, and phased checklist for wiring
 3. **Seed Demo Auth Flow**
    - [x] Create a dedicated demo user in Supabase Auth (e.g., `demo@veritas.com`).  
    - [x] Store credentials in environment variables (`VITE_DEMO_EMAIL`, `VITE_DEMO_PASSWORD` or similar).  
-   - [X] Add a startup effect in the app shell that silently signs in the demo user so the frontend always runs under the `authenticated` role.
+   - [x] Add a startup effect in the app shell that silently signs in the demo user so the frontend always runs under the `authenticated` role.
+4. **Netlify Functions Setup**
+   - [x] Configure Netlify CLI and `netlify.toml` for local development with `netlify dev`
+   - [x] Set up function directory structure in `netlify/functions/`
+   - [x] Ensure environment variables are accessible to functions
 
 ### **Stage 1: Coordinator Tab Backend Integration**
 **Scope:** Only wire the Coordinator tab components and PDF workflow functionality
@@ -90,6 +101,10 @@ const subscribeToTransactionUpdates = () => {
 }
 ```
 
+**Netlify Functions Required:**
+- [x] `approve-transaction.js` - Handles manual verification approval with data validation
+- [x] `create-test-transaction.js` - Creates test data for Phase 1A/1B testing
+
 ### Phase 1A – Auto-Approval Happy Path (See `docs/parse-pdf-user-journey.md#path-a` & Track A checklist items 2–3)
 - **Coordinator queue** shows updates via Realtime
 - Auto-approved transactions appear instantly in coordinator view
@@ -103,6 +118,9 @@ const subscribeToTransactionUpdates = () => {
    - [x] Confirm polling tabs respect updated totals after `refetchTransactions()`.
 3. **Demo QA**
    - [x] Run end-to-end email → approved flow using sample PDF; verify UI changes without manual input.
+4. **Netlify Function Integration**
+   - [x] Test transaction creation uses `create-test-transaction.js` function
+   - [x] Server-side data validation and audit trail creation
 
 ### Phase 1B – Manual Verification Flow (See `docs/parse-pdf-user-journey.md#path-b` & Track A checklist items 4–6)
 - **Verification modal** reads from `commission_evidences`
@@ -111,7 +129,7 @@ const subscribeToTransactionUpdates = () => {
 - Manual refresh available for coordinator actions
 1. **Context Enhancements**
    - [x] Extend `DashboardContext` with `transactions`, `setTransactions`, `refetchTransactions()`, and a polling hook (30–60 s).  
-   - [x] Share the context API with all tabs; ensure hybrid contract documented.
+   - [x] Share the context API with all tabs; ensure hybrid contract documented.  
 2. **Verification Modal Integration**
    - [x] In `VerificationForm.jsx`, subscribe to `commission_evidences`/`commission_checklists` for modal open events and guard cleanup.  
    - [x] On modal open, fetch latest evidence record to pre-fill fields; display confidence badges and checklist state.  
@@ -121,8 +139,10 @@ const subscribeToTransactionUpdates = () => {
    - [x] Navigate in/out of modal repeatedly to confirm no duplicate listeners or stale evidence.
 4. **Smoke Test Refresh Safety Net**
    - [x] Place a temporary debug trigger that calls `refetchTransactions()`; confirm state updates, then remove before release once automated tests cover the path.
-
-### **Stage 2: Payments Tab Backend Integration**  
+5. **Netlify Function Integration**
+   - [x] Replace direct Supabase calls with `approve-transaction.js` function
+   - [x] Add proper form validation and data type conversion
+   - [x] Implement JWT authentication for secure server-side updates### **Stage 2: Payments Tab Backend Integration**  
 **Scope:** Only wire the Payments tab components and transaction tracking
 
 **Goals:**
@@ -145,6 +165,21 @@ const subscribeToTransactionUpdates = () => {
 **DashboardContext Extensions for Stage 2:**
 ```javascript
 // Add payments-specific state and methods
+const [paymentData, setPaymentData] = useState([])
+const [paymentTransactions, setPaymentTransactions] = useState([])
+
+const refetchPaymentData = async () => {
+  // Refresh payment-related data
+}
+
+const subscribeToPaymentUpdates = () => {
+  // Realtime listeners for payment updates
+}
+```
+
+**Netlify Functions Required:**
+- [ ] `process-payment.js` - Handle payment processing and status updates
+- [ ] `update-payment-status.js` - Update transaction payment status
 const [paymentData, setPaymentData] = useState([])
 const [paymentTransactions, setPaymentTransactions] = useState([])
 
@@ -221,3 +256,67 @@ const subscribeToPaymentUpdates = () => {
 - **Mention deferred backend work**: Payments writes and bank integrations are out of scope for the current sprint; the UI is powered by Ashley’s context data until Supabase endpoints are ready.
 - **Use a single shared context**: All tabs must consume the shared `DashboardContext`; do not introduce tab-specific contexts or duplicate polling hooks.
 - **PDF Parse Dashboard-Ashley-context notes**: Document the realtime subscription lifecycle (subscribe on modal open, unsubscribe on close) inside the Track A context so future updates preserve the manual `refetchTransactions()` call.
+
+---
+
+## Development Workflow
+
+### **Local Development Setup**
+```bash
+# Use Netlify Dev for local development (required for functions)
+netlify dev
+
+# This automatically:
+# - Starts Vite dev server on port 3000
+# - Starts Netlify functions on port 8888
+# - Proxies function calls to /.netlify/functions/
+# - Loads environment variables for both frontend and functions
+```
+
+### **Function Development Patterns**
+```javascript
+// Standard function structure (following project patterns)
+import { createClient } from '@supabase/supabase-js';
+
+export async function handler(event, context) {
+  const headers = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'POST,OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  };
+  
+  if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers };
+  if (event.httpMethod !== 'POST') return { statusCode: 405, headers, body: 'Method Not Allowed' };
+
+  try {
+    const { param1, param2 } = JSON.parse(event.body);
+    const jwt = event.headers.authorization?.split(' ')[1];
+    
+    if (!jwt) throw new Error('Authentication token is required.');
+    
+    const userSupabase = createClient(
+      process.env.VITE_SUPABASE_URL,
+      process.env.VITE_SUPABASE_ANON_KEY,
+      { global: { headers: { Authorization: `Bearer ${jwt}` } } }
+    );
+
+    const { data: { user } } = await userSupabase.auth.getUser();
+    if (!user) throw new Error('User not found or token invalid.');
+
+    // Function logic here...
+
+    return { statusCode: 200, headers, body: JSON.stringify({ success: true }) };
+  } catch (err) {
+    return { statusCode: 500, headers, body: JSON.stringify({ error: err.message }) };
+  }
+}
+```
+
+### **Security Model**
+- ✅ **Reads**: Direct Supabase client calls from frontend (faster, cached)
+- ✅ **Writes**: Netlify functions only (secure, validated, audited)
+- ✅ **Authentication**: JWT tokens passed to all functions
+- ✅ **Data Validation**: Server-side type checking and business logic
+- ✅ **Audit Trail**: All mutations create `transaction_events` records
+
+```
