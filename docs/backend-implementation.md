@@ -50,27 +50,27 @@ This document captures the decisions, rationale, and phased checklist for wiring
 3. **Seed Demo Auth Flow**
    - [x] Create a dedicated demo user in Supabase Auth (e.g., `demo@veritas.com`).  
    - [x] Store credentials in environment variables (`VITE_DEMO_EMAIL`, `VITE_DEMO_PASSWORD` or similar).  
-   - [x] Add a startup effect in the app shell that silently signs in the demo user so the frontend always runs under the `authenticated` role.
+   - [X] Add a startup effect in the app shell that silently signs in the demo user so the frontend always runs under the `authenticated` role.
 
 ### Phase 1A – Auto-Approval Happy Path (See `docs/parse-pdf-user-journey.md#path-a` & Track A checklist items 2–3)
 1. **Workflow Finalization**
-   - [x] Confirm n8n promotes clean `commission_evidences` payloads to `transactions.final_*` when `requires_review = false`.  
-   - [x] Ensure `transactions.status` transitions `in_queue → in_review → approved` with `intake_status` updates.  
-   - [x] Emit `transaction_events` for parsing success and auto-approval.
+   - [ ] Confirm n8n promotes clean `commission_evidences` payloads to `transactions.final_*` when `requires_review = false`.  
+   - [ ] Ensure `transactions.status` transitions `in_queue → in_review → approved` with `intake_status` updates.  
+   - [ ] Emit `transaction_events` for parsing success and auto-approval.
 2. **Realtime Verification**
-   - [x] Validate queue table receives inserts/updates via Realtime subscription (Coordinator view).  
-   - [x] Confirm polling tabs respect updated totals after `refetchTransactions()`.
+   - [ ] Validate queue table receives inserts/updates via Realtime subscription (Coordinator view).  
+   - [ ] Confirm polling tabs respect updated totals after `refetchTransactions()`.
 3. **Demo QA**
-   - [x] Run end-to-end email → approved flow using sample PDF; verify UI changes without manual input.
+   - [ ] Run end-to-end email → approved flow using sample PDF; verify UI changes without manual input.
 
 ### Phase 1B – Manual Verification Flow (See `docs/parse-pdf-user-journey.md#path-b` & Track A checklist items 4–6)
 1. **Context Enhancements**
-   - [x] Extend `DashboardContext` with `transactions`, `setTransactions`, `refetchTransactions()`, and a polling hook (30–60 s).  
-   - [x] Share the context API with all tabs; ensure hybrid contract documented.  
+   - [ ] Extend `DashboardContext` with `transactions`, `setTransactions`, `refetchTransactions()`, and a polling hook (30–60 s).  
+   - [ ] Share the context API with all tabs; ensure hybrid contract documented.  
 2. **Verification Modal Integration**
-   - [x] In `VerificationForm.jsx`, subscribe to `commission_evidences`/`commission_checklists` for modal open events and guard cleanup.  
-   - [x] On modal open, fetch latest evidence record to pre-fill fields; display confidence badges and checklist state.  
-   - [x] On submit, call backend endpoint/RPC to write `transactions.final_*`, create `transaction_events`, update `status = 'approved'`, and invoke `refetchTransactions()`.
+   - [ ] In `VerificationForm.jsx`, subscribe to `commission_evidences`/`commission_checklists` for modal open events and guard cleanup.  
+   - [ ] On modal open, fetch latest evidence record to pre-fill fields; display confidence badges and checklist state.  
+   - [ ] On submit, call backend endpoint/RPC to write `transactions.final_*`, create `transaction_events`, update `status = 'approved'`, and invoke `refetchTransactions()`.
 3. **Testing & QA**
    - [ ] Manual review scenario: email → `needs_review` → coordinator edits → approved (Coordinator queue + tabs refreshed).  
    - [ ] Navigate in/out of modal repeatedly to confirm no duplicate listeners or stale evidence.
