@@ -11,7 +11,7 @@ erDiagram
     brokerages ||--o{ agents : "has"
     brokerages ||--o{ transactions : "owns"
     agents ||--o{ transactions : "works on"
-    transactions ||--o{ evidence : "has source snippets"
+    transactions ||--o{ commission_evidences : "has parsed snippets"
     transactions ||--o{ transaction_events : "audit trail"
 
     brokerages {
@@ -54,14 +54,14 @@ erDiagram
       uuid brokerage_id FK
     }
 
-    evidence {
+    commission_evidences {
       uuid id PK
       uuid transaction_id FK
-      text field_name
-      text field_value_text
-      text source_snippet
-      text source_email_url
-      jsonb detected_conflicts
+      uuid document_id FK
+      jsonb extraction_data
+      numeric confidence
+      bool requires_review
+      timestamptz created_at
     }
 
     transaction_events {
@@ -83,10 +83,9 @@ erDiagram
     brokerages ||--o{ agents : ""
     brokerages ||--o{ transactions : ""
     agents ||--o{ transactions : ""
-    transactions ||--o{ evidence : ""
     transactions ||--o{ transaction_events : ""
     transactions ||--o{ commission_documents : ""
-    transactions ||--o{ commission_extractions : ""
+    transactions ||--o{ commission_evidences : ""
     transactions ||--o{ commission_checklists : ""
     transactions ||--o{ commission_payouts : ""
     commission_payouts }o--|| payout_batches : "belongs to"
@@ -105,12 +104,11 @@ erDiagram
       text status
     }
 
-    commission_extractions {
+    commission_evidences {
       uuid id PK
       uuid transaction_id FK
       uuid document_id FK
-      text field_key
-      text field_value
+      jsonb extraction_data
       numeric confidence
       bool requires_review
       timestamptz created_at
@@ -191,9 +189,8 @@ erDiagram
 | `brokerages` | One row per brokerage with global fees (franchise, E&O, transaction). | Add optional fields for ACH provider config (`ach_provider`, `ach_config` JSON). | Enables payouts module to know which provider and credentials to use per brokerage. |
 | `agents` | Stores agent identity, activity flag, default split/cap, foreign key to brokerage. | Add `team_name`, `manager_id`, `focus_tags` JSON, and `default_bank_account_id` (FK). | Supports commission visualization filters (teams), coaching hierarchies, and payment readiness. |
 | `transactions` | Canonical commission record: addresses, participants, final deal amounts, commission percentages, referrals, notes. | Add intake + verification fields (`intake_status`, `confidence_state`, `checklist_state`, `gci_verified_at`, `gci_verification_source`), payout linkage (`pending_payout_amount`, `latest_payout_id`), freshness marker (`data_freshness_at`). | Tracks progress from upload to approval, records bank verification, and connects to payouts for dashboard freshness banners. |
-| `evidence` | Holds raw snippets extracted from emails/PDFs (`field_name`, `field_value_text`, `source_snippet`). | Add `document_id` FK to `commission_documents`, `extraction_method` (OCR/LLM/manual), `confidence_before_override`. | Links snippets to stored documents, records extraction source, and keeps audit data for manual corrections. |
+| `commission_evidences` | Stores structured JSON extractions per document (`extraction_data`, `confidence`, `requires_review`). | Add `extraction_method` (OCR/LLM/manual), `created_by`, and conflict metadata for overrides. | Tracks which pipeline produced a snapshot, supports reviewer accountability, and preserves low-confidence flags. |
 | `transaction_events` | Audit trail of actions on a transaction with metadata (`event_type`, `actor_name`). | Add `related_extraction_id` FK, `confidence_delta`, `stage_transition` booleans. | Provides a history of overrides triggered by low confidence, and records pipeline stage moves for visualization. |
-| `evidence` → `commission_extractions` (new) | n/a | — | Raw evidence remains, while structured parsed fields move into `commission_extractions` for clean API consumption. |
 
 For each existing table, the idea is to keep the current data intact and append fields that let the new features work without introducing entirely new entities unless necessary.
 
@@ -204,7 +201,7 @@ For each existing table, the idea is to keep the current data intact and append 
 | Table | Purpose | Key Fields |
 | ----- | ------- | ---------- |
 | `commission_documents` | Persist uploaded deal sheet, contract, invoice, disclosure | `doc_type`, `storage_path`, `checksum`, `status` |
-| `commission_extractions` | Store parsed fields + confidence | `field_key`, `field_value`, `confidence`, `requires_review` |
+| `commission_evidences` | Store structured parsed payloads per document | `extraction_data`, `confidence`, `requires_review`, `document_id` |
 | `commission_checklists` | Track compliance checklist items | `item_key`, `status`, `validated_by`, `validated_at` |
 | `commission_payouts` | Represent each payout attempt | `payout_amount`, `status`, `auto_ach`, `ach_reference`, `failure_reason` |
 | `payout_batches` | Batch together payouts scheduled in one action | `total_amount`, `auto_ach_enabled`, `status` |
@@ -218,7 +215,7 @@ For each existing table, the idea is to keep the current data intact and append 
 ## Track → Table Usage Map
 
 - **PDF Extraction (Ashley)**  
-  - Reads/Writes: `transactions` (intake + confidence fields), `commission_documents`, `commission_extractions`, `commission_checklists`, `evidence`, `transaction_events`.  
+  - Reads/Writes: `transactions` (intake + confidence fields), `commission_documents`, `commission_evidences`, `commission_checklists`, `transaction_events`.  
   - Focus: uploading source docs, populating parsed fields, managing checklist completion, logging overrides.
 
 - **Payments (Erica)**  
@@ -235,7 +232,7 @@ For each existing table, the idea is to keep the current data intact and append 
 
 1. Review proposed fields with stakeholders (accounting, brokerage leadership) to confirm terminology and data ownership.
 2. Draft Supabase migrations to add new tables and columns with appropriate RLS policies.
-3. Stub RPCs/Netlify functions aligned to the new tables (e.g., `upsert_commission_extraction`, `schedule_payout_batch`, `fetch_agent_metrics`).
+3. Stub RPCs/Netlify functions aligned to the new tables (e.g., `upsert_commission_evidence`, `schedule_payout_batch`, `fetch_agent_metrics`).
 4. Provide seeded fixtures or views so designers/engineers can build against these “real shapes” while backend integrations are finalized.
 
 ---
@@ -265,15 +262,16 @@ CREATE TABLE IF NOT EXISTS public.commission_documents (
   status text DEFAULT 'uploaded'
 );
 
-CREATE TABLE IF NOT EXISTS public.commission_extractions (
+CREATE TABLE IF NOT EXISTS public.commission_evidences (
   id uuid DEFAULT extensions.uuid_generate_v4() PRIMARY KEY,
   transaction_id uuid REFERENCES public.transactions(id) ON DELETE CASCADE,
   document_id uuid REFERENCES public.commission_documents(id) ON DELETE SET NULL,
-  field_key text NOT NULL,
-  field_value text,
+  extraction_data jsonb NOT NULL,
   confidence numeric,
   requires_review boolean DEFAULT false,
-  created_at timestamptz DEFAULT now() NOT NULL
+  created_at timestamptz DEFAULT now() NOT NULL,
+  extraction_method text,
+  created_by uuid
 );
 
 CREATE TABLE IF NOT EXISTS public.commission_checklists (
@@ -363,13 +361,8 @@ ALTER TABLE public.transactions
   ADD COLUMN IF NOT EXISTS latest_payout_id uuid REFERENCES public.commission_payouts(id) ON DELETE SET NULL,
   ADD COLUMN IF NOT EXISTS data_freshness_at timestamptz;
 
-ALTER TABLE public.evidence
-  ADD COLUMN IF NOT EXISTS document_id uuid REFERENCES public.commission_documents(id) ON DELETE CASCADE,
-  ADD COLUMN IF NOT EXISTS extraction_method text,
-  ADD COLUMN IF NOT EXISTS confidence_before_override numeric;
-
 ALTER TABLE public.transaction_events
-  ADD COLUMN IF NOT EXISTS related_extraction_id uuid REFERENCES public.commission_extractions(id) ON DELETE SET NULL,
+  ADD COLUMN IF NOT EXISTS related_extraction_id uuid REFERENCES public.commission_evidences(id) ON DELETE SET NULL,
   ADD COLUMN IF NOT EXISTS confidence_delta numeric,
   ADD COLUMN IF NOT EXISTS stage_transition boolean DEFAULT false;
 ```

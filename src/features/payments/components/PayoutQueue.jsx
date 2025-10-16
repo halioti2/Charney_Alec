@@ -1,18 +1,37 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useToast } from '../../../context/ToastContext.jsx';
-import { paymentQueueMock } from '../../../mocks/paymentsMockData.ts';
+import { usePayoutQueue, usePayoutScheduling } from '../hooks/usePaymentsAPI';
 import SchedulePayoutModal from './SchedulePayoutModal.jsx';
 
 export default function PayoutQueue() {
   const [selectedItems, setSelectedItems] = useState(new Set());
   const [showModal, setShowModal] = useState(false);
-  const { pushToast } = useToast();
+  const [payoutItems, setPayoutItems] = useState([]);
 
-  // Filter to only show items ready for payout with bank info
-  const payoutItems = useMemo(() =>
-    paymentQueueMock.filter(item => item.status === 'ready' && item.bank_account !== null),
-    []
-  );
+  const { pushToast } = useToast();
+  const { fetchPayoutQueue, isLoading, error, clearError } = usePayoutQueue();
+  const { schedulePayout, isScheduling } = usePayoutScheduling();
+
+  // Load payout queue data on component mount
+  useEffect(() => {
+    const loadPayoutQueue = async () => {
+      const data = await fetchPayoutQueue();
+      setPayoutItems(data);
+    };
+
+    loadPayoutQueue();
+  }, [fetchPayoutQueue]);
+
+  // Handle API errors
+  useEffect(() => {
+    if (error) {
+      pushToast({
+        message: `Error loading payout queue: ${error}`,
+        type: "error"
+      });
+      clearError();
+    }
+  }, [error, pushToast, clearError]);
 
   // Calculate running total
   const totalPayout = useMemo(() =>
@@ -49,6 +68,7 @@ export default function PayoutQueue() {
   };
 
   const handleSchedulePayout = () => {
+    // Enhanced zero-selection guard
     if (selectedItems.size === 0) {
       pushToast({
         message: "Please select at least one transaction to schedule a payout.",
@@ -57,16 +77,43 @@ export default function PayoutQueue() {
       return;
     }
 
+    // Additional validation: check for valid amounts
+    const selectedItemsData = payoutItems.filter(item => selectedItems.has(item.id));
+    const invalidItems = selectedItemsData.filter(item => item.payout_amount <= 0);
+
+    if (invalidItems.length > 0) {
+      pushToast({
+        message: `Cannot schedule payout: ${invalidItems.length} transaction${invalidItems.length !== 1 ? 's have' : ' has'} invalid amount${invalidItems.length !== 1 ? 's' : ''}.`,
+        type: "error"
+      });
+      return;
+    }
+
     setShowModal(true);
   };
 
   const handleConfirmPayout = async (payoutData) => {
-    // TODO: Implement actual payout scheduling logic
-    console.log('Scheduling payout:', payoutData);
+    const selectedItemsData = payoutItems.filter(item => selectedItems.has(item.id));
 
-    // Clear selections after successful scheduling
-    setSelectedItems(new Set());
-    setShowModal(false);
+    const result = await schedulePayout({
+      selectedItems: selectedItemsData,
+      achEnabled: payoutData.achEnabled,
+      batchNote: payoutData.batchNote
+    });
+
+    if (result) {
+      // Success - refresh the queue and clear selections
+      const updatedData = await fetchPayoutQueue();
+      setPayoutItems(updatedData);
+      setSelectedItems(new Set());
+      setShowModal(false);
+
+      pushToast({
+        message: `Successfully scheduled ${result.scheduledCount} payout${result.scheduledCount !== 1 ? 's' : ''} (Batch: ${result.batchId})`,
+        type: "success"
+      });
+    }
+    // Error handling is done by the hook and displayed via useEffect
   };
 
   const formatCurrency = (amount) => {
@@ -86,6 +133,26 @@ export default function PayoutQueue() {
     });
   };
 
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="bg-white dark:bg-charney-charcoal rounded-xl border border-charney-light-gray dark:border-charney-gray/30 p-6">
+        <div className="text-center">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-charney-red"></div>
+          </div>
+          <h3 className="mt-2 text-sm font-medium text-charney-black dark:text-charney-white">
+            Loading Payout Queue...
+          </h3>
+          <p className="mt-1 text-sm text-charney-gray">
+            Fetching ready transactions
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Empty state
   if (payoutItems.length === 0) {
     return (
       <div className="rounded-xl border border-charney-light-gray bg-white p-8 shadow-sm dark:border-charney-gray/70 dark:bg-charney-charcoal/50">
@@ -107,103 +174,86 @@ export default function PayoutQueue() {
   }
 
   return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-lg font-semibold text-charney-black dark:text-charney-white">
-            Payout Queue
-          </h3>
-          <p className="text-sm text-charney-gray">
-            {payoutItems.length} transactions ready for payout
-          </p>
-        </div>
-        
-        {selectedItems.size > 0 && (
+    <div className="card p-6">
+      <h3 className="mb-4 text-2xl font-black tracking-tighter">
+        Payout <span className="text-charney-red">Queue</span>
+      </h3>
+
+      {/* Action Bar */}
+      {selectedItems.size > 0 && (
+        <div className="mb-4 flex items-center justify-between bg-charney-cream/30 dark:bg-charney-slate/30 rounded-sm p-3">
+          <span className="text-sm font-medium text-charney-black dark:text-charney-white">
+            {selectedItems.size} transaction{selectedItems.size !== 1 ? 's' : ''} selected • Total: {formatCurrency(totalPayout)}
+          </span>
           <button
             onClick={handleSchedulePayout}
-            className="bg-charney-red text-charney-white px-4 py-2 rounded-lg font-medium hover:bg-charney-black transition-colors"
+            className="bg-charney-red text-white px-4 py-2 text-sm font-bold uppercase hover:bg-charney-black transition-colors"
           >
-            Schedule Payout ({selectedItems.size})
+            Schedule Payout
           </button>
-        )}
-      </div>
+        </div>
+      )}
 
-      {/* Table */}
-      <div className="rounded-xl border border-charney-light-gray bg-white shadow-sm dark:border-charney-gray/70 dark:bg-charney-charcoal/50 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-charney-cream dark:bg-charney-slate">
-              <tr>
-                <th className="px-4 py-3 text-left">
+      <div className="overflow-x-auto" role="region" aria-label="Payout queue">
+        <table className="w-full text-left text-sm">
+          <thead className="text-xs uppercase">
+            <tr>
+              <th className="p-4">
+                <input
+                  type="checkbox"
+                  checked={selectedItems.size === payoutItems.length && payoutItems.length > 0}
+                  onChange={handleSelectAll}
+                  className="rounded border-charney-gray focus:ring-charney-red"
+                />
+              </th>
+              <th className="p-4">Agent</th>
+              <th className="p-4">Property</th>
+              <th className="p-4 text-center">Net Payout</th>
+              <th className="p-4">Date</th>
+              <th className="p-4 text-center">ACH Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {payoutItems.map((item) => (
+              <tr
+                key={item.id}
+                className="cursor-pointer hover:bg-charney-cream/50 dark:hover:bg-charney-cream/10"
+              >
+                <td className="p-4">
                   <input
                     type="checkbox"
-                    checked={selectedItems.size === payoutItems.length && payoutItems.length > 0}
-                    onChange={handleSelectAll}
+                    checked={selectedItems.has(item.id)}
+                    onChange={() => handleSelectItem(item.id)}
                     className="rounded border-charney-gray focus:ring-charney-red"
                   />
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-charney-black dark:text-charney-white">
-                  Agent Name
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-charney-black dark:text-charney-white">
-                  Property Address
-                </th>
-                <th className="px-4 py-3 text-right text-sm font-medium text-charney-black dark:text-charney-white">
-                  Net Payout
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-charney-black dark:text-charney-white">
-                  Created Date
-                </th>
-                <th className="px-4 py-3 text-center text-sm font-medium text-charney-black dark:text-charney-white">
-                  ACH Ready
-                </th>
+                </td>
+                <td className="p-4 font-bold">
+                  {item.agent.full_name}
+                </td>
+                <td className="p-4 text-charney-gray">
+                  {item.transaction.property_address}
+                </td>
+                <td className="p-4 text-center text-charney-gray">
+                  {formatCurrency(item.payout_amount)}
+                </td>
+                <td className="p-4 text-charney-gray">
+                  {formatDate(item.created_at)}
+                </td>
+                <td className="p-4 text-center">
+                  {item.auto_ach ? (
+                    <span className="inline-flex items-center rounded-sm px-2.5 py-1 text-xs font-bold uppercase bg-green-100 text-green-800">
+                      ACH
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center rounded-sm px-2.5 py-1 text-xs font-bold uppercase bg-yellow-100 text-yellow-800">
+                      Manual
+                    </span>
+                  )}
+                </td>
               </tr>
-            </thead>
-            <tbody className="divide-y divide-charney-light-gray dark:divide-charney-gray/30">
-              {payoutItems.map((item) => (
-                <tr 
-                  key={item.id}
-                  className={`hover:bg-charney-cream/50 dark:hover:bg-charney-slate/30 ${
-                    selectedItems.has(item.id) ? 'bg-charney-cream/30 dark:bg-charney-slate/20' : ''
-                  }`}
-                >
-                  <td className="px-4 py-3">
-                    <input
-                      type="checkbox"
-                      checked={selectedItems.has(item.id)}
-                      onChange={() => handleSelectItem(item.id)}
-                      className="rounded border-charney-gray focus:ring-charney-red"
-                    />
-                  </td>
-                  <td className="px-4 py-3 text-sm font-medium text-charney-black dark:text-charney-white">
-                    {item.agent.full_name}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-charney-gray">
-                    {item.transaction.property_address}
-                  </td>
-                  <td className="px-4 py-3 text-sm font-semibold text-right text-charney-black dark:text-charney-white">
-                    {formatCurrency(item.payout_amount)}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-charney-gray">
-                    {formatDate(item.created_at)}
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    {item.auto_ach ? (
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
-                        ACH Ready
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">
-                        Manual
-                      </span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+            ))}
+          </tbody>
+        </table>
       </div>
 
       {/* Running Total Panel */}
