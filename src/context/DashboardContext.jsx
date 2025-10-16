@@ -6,6 +6,12 @@ import {
   calculateCommission,
   createMockUser,
 } from '../lib/dashboardData.js';
+import {
+  fetchTransactions,
+  transformTransactionsForUI,
+  subscribeToTransactions,
+  subscribeToCommissionEvidences,
+} from '../lib/supabaseService.js';
 
 const DashboardContext = createContext(undefined);
 
@@ -41,6 +47,12 @@ export function DashboardProvider({ children, initialState = {} }) {
   const [isPdfAuditVisible, setIsPdfAuditVisible] = useState(initialIsPdfAuditVisible);
   const [currentAuditId, setCurrentAuditId] = useState(initialCurrentAuditId);
 
+  // Stage 1: Coordinator Tab Backend Integration
+  const [transactions, setTransactions] = useState([]);
+  const [coordinatorData, setCoordinatorData] = useState(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [realtimeSubscriptions, setRealtimeSubscriptions] = useState([]);
+
   useEffect(() => {
     if (typeof document === 'undefined') return;
     const root = document.documentElement;
@@ -70,6 +82,64 @@ export function DashboardProvider({ children, initialState = {} }) {
     setCurrentAuditId(null);
   }, []);
 
+  // Stage 1: Coordinator Tab Methods
+  const refetchCoordinatorData = useCallback(async () => {
+    setIsRefreshing(true);
+    try {
+      const rawTransactions = await fetchTransactions();
+      const transformedTransactions = transformTransactionsForUI(rawTransactions);
+      setTransactions(transformedTransactions);
+      setCoordinatorData({ lastUpdated: new Date().toISOString() });
+    } catch (error) {
+      console.error('Failed to refresh coordinator data:', error);
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, []);
+
+  const subscribeToTransactionUpdates = useCallback(() => {
+    // Clean up existing subscriptions
+    realtimeSubscriptions.forEach(sub => sub.unsubscribe());
+
+    const transactionSub = subscribeToTransactions((payload) => {
+      // Refresh data when transactions change
+      refetchCoordinatorData();
+    });
+
+    const evidenceSub = subscribeToCommissionEvidences((payload) => {
+      // Refresh data when commission evidences change
+      refetchCoordinatorData();
+    });
+
+    setRealtimeSubscriptions([transactionSub, evidenceSub]);
+
+    return () => {
+      transactionSub.unsubscribe();
+      evidenceSub.unsubscribe();
+    };
+  }, [realtimeSubscriptions, refetchCoordinatorData]);
+
+  // Initial data fetch and subscription setup
+  useEffect(() => {
+    refetchCoordinatorData();
+    const unsubscribe = subscribeToTransactionUpdates();
+    
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+  }, []); // Empty dependency array for initial setup only
+
+  // Polling for coordinator data (30-60s backup)
+  useEffect(() => {
+    const pollInterval = setInterval(() => {
+      if (!isRefreshing) {
+        refetchCoordinatorData();
+      }
+    }, 45000); // Poll every 45 seconds
+
+    return () => clearInterval(pollInterval);
+  }, [isRefreshing, refetchCoordinatorData]);
+
   const contextValue = useMemo(
     () => ({
       commissions,
@@ -97,6 +167,12 @@ export function DashboardProvider({ children, initialState = {} }) {
       currentAuditId,
       showPdfAudit,
       hidePdfAudit,
+      // Stage 1: Coordinator Backend Integration
+      transactions,
+      coordinatorData,
+      isRefreshing,
+      refetchCoordinatorData,
+      subscribeToTransactionUpdates,
     }),
     [
       commissions,
@@ -114,6 +190,12 @@ export function DashboardProvider({ children, initialState = {} }) {
       currentAuditId,
       showPdfAudit,
       hidePdfAudit,
+      // Stage 1 dependencies
+      transactions,
+      coordinatorData,
+      isRefreshing,
+      refetchCoordinatorData,
+      subscribeToTransactionUpdates,
     ],
   );
 

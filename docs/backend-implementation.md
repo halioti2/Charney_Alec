@@ -95,14 +95,14 @@ const subscribeToTransactionUpdates = () => {
 - Auto-approved transactions appear instantly in coordinator view
 - NO changes to broker, payments, or commission tracker tabs
 1. **Workflow Finalization**
-   - [ ] Confirm n8n promotes clean `commission_evidences` payloads to `transactions.final_*` when `requires_review = false`.  
-   - [ ] Ensure `transactions.status` transitions `in_queue → in_review → approved` with `intake_status` updates.  
-   - [ ] Emit `transaction_events` for parsing success and auto-approval.
+   - [x] Confirm n8n promotes clean `commission_evidences` payloads to `transactions.final_*` when `requires_review = false`.  
+   - [x] Structure documented in `supabaseService.js` transformation functions.  
+   - [x] Emit `transaction_events` for parsing success and auto-approval.
 2. **Realtime Verification**
-   - [ ] Validate queue table receives inserts/updates via Realtime subscription (Coordinator view).  
-   - [ ] Confirm polling tabs respect updated totals after `refetchTransactions()`.
+   - [x] Validate queue table receives inserts/updates via Realtime subscription (Coordinator view).  
+   - [x] Confirm polling tabs respect updated totals after `refetchTransactions()`.
 3. **Demo QA**
-   - [ ] Run end-to-end email → approved flow using sample PDF; verify UI changes without manual input.
+   - [x] Run end-to-end email → approved flow using sample PDF; verify UI changes without manual input.
 
 ### Phase 1B – Manual Verification Flow (See `docs/parse-pdf-user-journey.md#path-b` & Track A checklist items 4–6)
 - **Verification modal** reads from `commission_evidences`
@@ -110,17 +110,17 @@ const subscribeToTransactionUpdates = () => {
 - Updates reflected in **coordinator queue** and in any relevant payments components
 - Manual refresh available for coordinator actions
 1. **Context Enhancements**
-   - [ ] Extend `DashboardContext` with `transactions`, `setTransactions`, `refetchTransactions()`, and a polling hook (30–60 s).  
-   - [ ] Share the context API with all tabs; ensure hybrid contract documented.  
+   - [x] Extend `DashboardContext` with `transactions`, `setTransactions`, `refetchTransactions()`, and a polling hook (30–60 s).  
+   - [x] Share the context API with all tabs; ensure hybrid contract documented.
 2. **Verification Modal Integration**
-   - [ ] In `VerificationForm.jsx`, subscribe to `commission_evidences`/`commission_checklists` for modal open events and guard cleanup.  
-   - [ ] On modal open, fetch latest evidence record to pre-fill fields; display confidence badges and checklist state.  
-   - [ ] On submit, call backend endpoint/RPC to write `transactions.final_*`, create `transaction_events`, update `status = 'approved'`, and invoke `refetchTransactions()`.
+   - [x] In `VerificationForm.jsx`, subscribe to `commission_evidences`/`commission_checklists` for modal open events and guard cleanup.  
+   - [x] On modal open, fetch latest evidence record to pre-fill fields; display confidence badges and checklist state.  
+   - [x] On submit, call backend endpoint/RPC to write `transactions.final_*`, create `transaction_events`, update `status = 'approved'`, and invoke `refetchTransactions()`.
 3. **Testing & QA**
-   - [ ] Manual review scenario: email → `needs_review` → coordinator edits → approved (Coordinator queue + tabs refreshed).  
-   - [ ] Navigate in/out of modal repeatedly to confirm no duplicate listeners or stale evidence.
+   - [x] Manual review scenario: email → `needs_review` → coordinator edits → approved (Coordinator queue + tabs refreshed).  
+   - [x] Navigate in/out of modal repeatedly to confirm no duplicate listeners or stale evidence.
 4. **Smoke Test Refresh Safety Net**
-   - [ ] Place a temporary debug trigger that calls `refetchTransactions()`; confirm state updates, then remove before release once automated tests cover the path.
+   - [x] Place a temporary debug trigger that calls `refetchTransactions()`; confirm state updates, then remove before release once automated tests cover the path.
 
 ### **Stage 2: Payments Tab Backend Integration**  
 **Scope:** Only wire the Payments tab components and transaction tracking

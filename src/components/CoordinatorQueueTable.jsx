@@ -10,25 +10,26 @@ const statusColors = {
 };
 
 const CoordinatorQueueTable = () => {
-  const { commissions, showPdfAudit } = useDashboardContext();
+  const { transactions, showPdfAudit, isRefreshing } = useDashboardContext();
   const [isExpanded, setIsExpanded] = useState(false);
 
   const rows = useMemo(
     () =>
-      commissions.map((commission) => ({
-        ...commission,
-        totalCommission: commission.salePrice * (commission.grossCommissionRate / 100),
-        statusClass: statusColors[commission.status] ?? 'bg-gray-100 text-gray-800',
+      transactions.map((transaction) => ({
+        ...transaction,
+        totalCommission: transaction.salePrice * (transaction.grossCommissionRate / 100),
+        statusClass: statusColors[transaction.status] ?? 'bg-gray-100 text-gray-800',
       })),
-    [commissions],
+    [transactions],
   );
 
   const displayedRows = isExpanded ? rows : rows.slice(0, 10);
 
-  const handleProcessClick = (e, commissionId) => {
+  const handleProcessClick = (e, transaction) => {
     e.preventDefault();
     e.stopPropagation();
-    showPdfAudit(commissionId);
+    // Pass the transaction ID for verification modal
+    showPdfAudit(transaction.id);
   };
 
   return (
@@ -48,23 +49,23 @@ const CoordinatorQueueTable = () => {
             </tr>
           </thead>
           <tbody>
-            {displayedRows.map((commission) => (
+            {displayedRows.map((transaction) => (
               <tr
-                key={commission.id}
+                key={transaction.id}
                 className="hover:bg-charney-cream/50 dark:hover:bg-charney-cream/10"
               >
-                <td className="p-4">{commission.broker}</td>
-                <td className="p-4">{commission.propertyAddress}</td>
-                <td className="p-4">{formatCurrency(commission.totalCommission)}</td>
+                <td className="p-4">{transaction.broker}</td>
+                <td className="p-4">{transaction.propertyAddress}</td>
+                <td className="p-4">{formatCurrency(transaction.totalCommission)}</td>
                 <td className="p-4">
-                  <span className={`rounded-full px-2 py-1 text-xs ${commission.statusClass}`}>
-                    {commission.status}
+                  <span className={`rounded-full px-2 py-1 text-xs ${transaction.statusClass}`}>
+                    {transaction.status}
                   </span>
                 </td>
                 <td className="p-4">
                   <button
                     type="button"
-                    onClick={(e) => handleProcessClick(e, commission.id)}
+                    onClick={(e) => handleProcessClick(e, transaction)}
                     className="rounded bg-charney-red px-4 py-2 text-sm font-medium text-white hover:bg-charney-red/90 transition-colors"
                   >
                     Process

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useDashboardContext } from '../context/DashboardContext.jsx';
+import { fetchTransactionForVerification, approveTransaction } from '../lib/supabaseService.js';
 import DealSheetViewer from '../components/DealSheetViewer.jsx';
 import ConfidenceBadge from '../components/ConfidenceBadge.jsx';
 import VerificationForm from '../components/VerificationForm.jsx';
@@ -7,20 +8,56 @@ import ComplianceChecklist from '../components/ComplianceChecklist.jsx';
 
 const checklistItemsConfig = ["Contract of Sale", "Invoice", "Disclosure Forms"];
 
-const initialFormData = {
-  property_address: "123 Main Street, Brooklyn, NY 11201",
-  final_sale_price: 1500000,
-  gci_total: 45000,
-  final_agent_name: "Ashley Carter",
-  final_agent_split_percent: 50,
-  net_payout_to_agent: 19505,
-};
-
 const PdfAuditCard = () => {
-  const { isPdfAuditVisible, currentAuditId, hidePdfAudit } = useDashboardContext();
+  const { isPdfAuditVisible, currentAuditId, hidePdfAudit, refetchCoordinatorData } = useDashboardContext();
   const [isSubmitDisabled, setIsSubmitDisabled] = useState(true);
-  const [formData, setFormData] = useState(initialFormData);
+  const [formData, setFormData] = useState({});
   const [attachedFiles, setAttachedFiles] = useState({});
+  const [transactionData, setTransactionData] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Load transaction data when modal opens
+  useEffect(() => {
+    if (isPdfAuditVisible && currentAuditId) {
+      setIsLoading(true);
+      fetchTransactionForVerification(currentAuditId)
+        .then(data => {
+          if (data) {
+            setTransactionData(data);
+            const evidence = data.commission_evidences?.[0];
+            const extractionData = evidence?.extraction_data || {};
+            
+            // Initialize form with existing data
+            setFormData({
+              property_address: data.property_address || extractionData.property_address || "",
+              final_sale_price: data.final_sale_price || extractionData.sale_price || 0,
+              gci_total: calculateGCI(data, extractionData),
+              final_broker_agent_name: data.final_broker_agent_name || extractionData.broker_agent_name || "",
+              final_agent_split_percent: data.final_agent_split_percent || extractionData.agent_split_percent || 0,
+              final_listing_commission_percent: data.final_listing_commission_percent || extractionData.listing_side_commission_percent || 0,
+              final_buyer_commission_percent: data.final_buyer_commission_percent || extractionData.buyer_side_commission_percent || 0,
+              final_co_broker_agent_name: data.final_co_broker_agent_name || extractionData.co_broker_agent_name || "",
+              final_co_brokerage_firm_name: data.final_co_brokerage_firm_name || extractionData.co_brokerage_firm_name || "",
+            });
+          }
+        })
+        .catch(error => {
+          console.error('Failed to load transaction data:', error);
+        })
+        .finally(() => {
+          setIsLoading(false);
+        });
+    }
+  }, [isPdfAuditVisible, currentAuditId]);
+
+  // Calculate GCI from transaction data
+  const calculateGCI = (transaction, extractionData) => {
+    const salePrice = transaction.final_sale_price || extractionData.sale_price || 0;
+    const listingRate = transaction.final_listing_commission_percent || extractionData.listing_side_commission_percent || 0;
+    const buyerRate = transaction.final_buyer_commission_percent || extractionData.buyer_side_commission_percent || 0;
+    return salePrice * ((listingRate + buyerRate) / 100);
+  };
 
   useEffect(() => {
     const allItemsAttached = checklistItemsConfig.every(item => attachedFiles[item]);
@@ -38,17 +75,30 @@ const PdfAuditCard = () => {
     setAttachedFiles(newFiles);
   };
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
   const handleSubmit = async () => {
+    if (!transactionData || !currentAuditId) {
+      console.error('No transaction data available for submission');
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       console.log("Submitting for approval...");
       console.log("Form Data:", formData);
       console.log("Attached Files:", attachedFiles);
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      hidePdfAudit();
+      
+      // Submit the verified data to Supabase
+      const success = await approveTransaction(currentAuditId, formData);
+      
+      if (success) {
+        console.log("Transaction approved successfully");
+        // Refresh coordinator data to show updated status
+        await refetchCoordinatorData();
+        hidePdfAudit();
+      } else {
+        console.error("Failed to approve transaction");
+        // In a real app, you'd show an error message to the user
+      }
     } catch (error) {
       console.error("Error submitting:", error);
     } finally {
@@ -57,6 +107,30 @@ const PdfAuditCard = () => {
   };
 
   if (!isPdfAuditVisible) return null;
+
+  if (isLoading) {
+    return (
+      <div className="fixed inset-0 z-50 overflow-y-auto">
+        <div className="fixed inset-0 bg-charney-black/50 backdrop-blur-sm transition-opacity dark:bg-charney-black/90" />
+        <div className="flex min-h-screen items-center justify-center p-4">
+          <div className="relative w-full max-w-6xl rounded-[18px] border border-charney-light-gray/60 bg-charney-white p-8 text-charney-black shadow-charney transition-all dark:border-charney-gray/20 dark:bg-charney-charcoal dark:text-charney-white dark:shadow-none">
+            <div className="flex items-center justify-center py-12">
+              <div className="text-center">
+                <svg className="mx-auto h-8 w-8 animate-spin text-charney-red" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+                <p className="mt-4 text-charney-gray">Loading transaction data...</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const evidence = transactionData?.commission_evidences?.[0];
+  const confidence = evidence?.confidence || 0;
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
@@ -83,7 +157,7 @@ const PdfAuditCard = () => {
             <div className="grid gap-8 lg:grid-cols-2">
               <div className="space-y-8">
                 <DealSheetViewer />
-                <ConfidenceBadge confidence={95} />
+                <ConfidenceBadge confidence={confidence} />
               </div>
 
               <div className="space-y-8 dark:text-charney-white">
