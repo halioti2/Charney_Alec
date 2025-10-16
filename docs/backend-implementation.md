@@ -16,8 +16,10 @@ This document captures the decisions, rationale, and phased checklist for wiring
    - Extend `DashboardContext` (similar to the prior `AuthContext` pattern) to own data fetching, manual refresh, and (later) realtime wiring.  
    - Frontend components consume data from context; no tab should call Supabase directly.
 
-3. **Phased Rollout (Ashley → Erica → Rad)**  
-   - Stage the work to de-risk integration: finish the PDF flow first (largest UX impact), then Payments, then Commission Tracker.
+3. **Phased Rollout by Tab (Updated Scope)**
+   - **Stage 1: Coordinator Tab Only** - Wire coordinator queue, verification modal, and PDF workflow
+   - **Stage 2: Payments Tab Only** - Hook up payments view and transaction tracking  
+   - **Stage 3: Broker & Commission Tracker** - Deferred until frontend UI changes are completed on these sections
 
 ---
 
@@ -52,7 +54,46 @@ This document captures the decisions, rationale, and phased checklist for wiring
    - [x] Store credentials in environment variables (`VITE_DEMO_EMAIL`, `VITE_DEMO_PASSWORD` or similar).  
    - [X] Add a startup effect in the app shell that silently signs in the demo user so the frontend always runs under the `authenticated` role.
 
+### **Stage 1: Coordinator Tab Backend Integration**
+**Scope:** Only wire the Coordinator tab components and PDF workflow functionality
+
+**Goals:**
+- Enable coordinator queue to show live transaction updates via Realtime
+- Wire verification modal to read from `commission_evidences` 
+- Connect PDF workflow (Path A auto-approval, Path B manual verification)
+- Ensure coordinator can see real-time updates when documents arrive
+
+**Components in Scope:**
+- `CoordinatorQueue` component
+- `VerificationModal` component  
+- PDF workflow realtime listeners
+- Manual refresh functionality for coordinator actions
+
+**Components NOT in Scope:**
+- Broker tab components
+- Commission tracker components
+- Any broker-specific data fetching
+
+**DashboardContext Extensions for Stage 1:**
+```javascript
+// Add only coordinator-specific state and methods
+const [transactions, setTransactions] = useState([])
+const [coordinatorData, setCoordinatorData] = useState(null)
+const [isRefreshing, setIsRefreshing] = useState(false)
+
+const refetchCoordinatorData = async () => {
+  // Refresh coordinator queue and related data
+}
+
+const subscribeToTransactionUpdates = () => {
+  // Realtime listeners for coordinator queue
+}
+```
+
 ### Phase 1A – Auto-Approval Happy Path (See `docs/parse-pdf-user-journey.md#path-a` & Track A checklist items 2–3)
+- **Coordinator queue** shows updates via Realtime
+- Auto-approved transactions appear instantly in coordinator view
+- NO changes to broker, payments, or commission tracker tabs
 1. **Workflow Finalization**
    - [ ] Confirm n8n promotes clean `commission_evidences` payloads to `transactions.final_*` when `requires_review = false`.  
    - [ ] Ensure `transactions.status` transitions `in_queue → in_review → approved` with `intake_status` updates.  
@@ -64,6 +105,10 @@ This document captures the decisions, rationale, and phased checklist for wiring
    - [ ] Run end-to-end email → approved flow using sample PDF; verify UI changes without manual input.
 
 ### Phase 1B – Manual Verification Flow (See `docs/parse-pdf-user-journey.md#path-b` & Track A checklist items 4–6)
+- **Verification modal** reads from `commission_evidences`
+- Coordinator can approve via modal
+- Updates reflected in **coordinator queue** and in any relevant payments components
+- Manual refresh available for coordinator actions
 1. **Context Enhancements**
    - [ ] Extend `DashboardContext` with `transactions`, `setTransactions`, `refetchTransactions()`, and a polling hook (30–60 s).  
    - [ ] Share the context API with all tabs; ensure hybrid contract documented.  
@@ -77,7 +122,41 @@ This document captures the decisions, rationale, and phased checklist for wiring
 4. **Smoke Test Refresh Safety Net**
    - [ ] Place a temporary debug trigger that calls `refetchTransactions()`; confirm state updates, then remove before release once automated tests cover the path.
 
-### Stage 2 – Erica (Payments Tab)
+### **Stage 2: Payments Tab Backend Integration**  
+**Scope:** Only wire the Payments tab components and transaction tracking
+
+**Goals:**
+- Connect payments view to transaction data
+- Enable payment status tracking
+- Wire payment-related realtime updates
+- Ensure payments team can track commission payments
+
+**Components in Scope:**
+- `PaymentsView` component
+- Payment tracking components
+- Transaction status updates for payments
+- Payment-related manual refresh
+
+**Components NOT in Scope:**
+- Broker tab components  
+- Commission tracker components
+- Coordinator-specific functionality (already completed in Stage 1)
+
+**DashboardContext Extensions for Stage 2:**
+```javascript
+// Add payments-specific state and methods
+const [paymentData, setPaymentData] = useState([])
+const [paymentTransactions, setPaymentTransactions] = useState([])
+
+const refetchPaymentData = async () => {
+  // Refresh payment-related data
+}
+
+const subscribeToPaymentUpdates = () => {
+  // Realtime listeners for payment updates
+}
+```
+
 1. **Consume Context**
    - [ ] Use the polling data (same hook as Coordinator) to populate the Payments tab.  
    - [ ] Trigger `refetchTransactions()` after scheduling/approving payouts so totals stay current.  
@@ -91,7 +170,21 @@ This document captures the decisions, rationale, and phased checklist for wiring
    - [ ] Verify manual refresh after actions.  
    - [ ] Confirm nothing blocks PDF realtime operations (shared context must remain stable).
 
-### Stage 3 – Rad (Commission Tracker Tab)
+### **Stage 3: Broker & Commission Tracker Integration (Future)**
+**Scope:** Complete remaining dashboard tabs after frontend UI is ready
+
+**Prerequisites:**
+- Frontend UI changes completed for Broker tab
+- Frontend UI changes completed for Commission Tracker tab
+- Components structure finalized for both sections
+
+**Goals:**
+- Wire broker dashboard to commission data
+- Connect commission tracker to tracking data
+- Complete full dashboard realtime integration
+
+**Status:** **DEFERRED** - Waiting for frontend component completion
+
 1. **Consume Context & Metrics**
    - [ ] Read aggregated metrics exposed from `DashboardContext` (initially polling, later Supabase RPC).  
    - [ ] Call `refetchTransactions()` or a dedicated `refetchAgentMetrics()` after drill-down edits.
