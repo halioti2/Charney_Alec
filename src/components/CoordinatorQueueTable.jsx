@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useDashboardContext } from '../context/DashboardContext.jsx';
 import { formatCurrency } from '../lib/formatters.js';
 
@@ -11,6 +11,7 @@ const statusColors = {
 
 const CoordinatorQueueTable = () => {
   const { commissions, showPdfAudit } = useDashboardContext();
+  const [isExpanded, setIsExpanded] = useState(false);
 
   const rows = useMemo(
     () =>
@@ -21,6 +22,8 @@ const CoordinatorQueueTable = () => {
       })),
     [commissions],
   );
+
+  const displayedRows = isExpanded ? rows : rows.slice(0, 10);
 
   const handleProcessClick = (e, commissionId) => {
     e.preventDefault();
@@ -45,7 +48,7 @@ const CoordinatorQueueTable = () => {
             </tr>
           </thead>
           <tbody>
-            {rows.map((commission) => (
+            {displayedRows.map((commission) => (
               <tr
                 key={commission.id}
                 className="hover:bg-charney-cream/50 dark:hover:bg-charney-cream/10"
@@ -71,6 +74,17 @@ const CoordinatorQueueTable = () => {
             ))}
           </tbody>
         </table>
+        {rows.length > 10 && (
+          <div className="mt-4 flex justify-center">
+            <button
+              type="button"
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="rounded bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200 transition-colors"
+            >
+              {isExpanded ? 'Show Less' : `Show More (${rows.length - 10} more)`}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
