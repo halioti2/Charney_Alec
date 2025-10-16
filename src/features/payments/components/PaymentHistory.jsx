@@ -1,26 +1,35 @@
-import { useState, useEffect } from 'react';
-import { usePaymentHistory } from '../hooks/usePaymentsAPI';
+import { useState, useMemo } from 'react';
+import { useDashboardContext } from '../../../context/DashboardContext.jsx';
 
 export default function PaymentHistory() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [achFilter, setAchFilter] = useState('all');
-  const [historyData, setHistoryData] = useState([]);
 
-  const { fetchPaymentHistory, isLoading } = usePaymentHistory();
+  const { paymentHistory, isRefreshingPayments } = useDashboardContext();
 
-  // Load payment history data when filters change
-  useEffect(() => {
-    const loadPaymentHistory = async () => {
-      const data = await fetchPaymentHistory({
-        status: statusFilter,
-        achMethod: achFilter,
-        limit: 100
+  // Filter payment history data based on filters
+  const filteredHistoryData = useMemo(() => {
+    let filtered = paymentHistory;
+
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter(item => {
+        if (statusFilter === 'paid') return item._rawTransaction?.paid_at;
+        if (statusFilter === 'scheduled') return item._rawTransaction?.payment_status === 'scheduled';
+        if (statusFilter === 'ready') return item.status === 'approved' && !item._rawTransaction?.paid_at;
+        return true;
       });
-      setHistoryData(data);
-    };
+    }
 
-    loadPaymentHistory();
-  }, [fetchPaymentHistory, statusFilter, achFilter]);
+    if (achFilter !== 'all') {
+      filtered = filtered.filter(item => {
+        if (achFilter === 'ach') return item._rawTransaction?.payment_method === 'ach';
+        if (achFilter === 'manual') return item._rawTransaction?.payment_method === 'manual' || !item._rawTransaction?.payment_method;
+        return true;
+      });
+    }
+
+    return filtered;
+  }, [paymentHistory, statusFilter, achFilter]);
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-US', {
@@ -67,8 +76,8 @@ export default function PaymentHistory() {
     );
   };
 
-  const getAchBadge = (achReference) => {
-    if (achReference) {
+  const getAchBadge = (paymentMethod) => {
+    if (paymentMethod === 'ach') {
       return (
         <span className="inline-flex items-center rounded-sm px-2.5 py-1 text-xs font-bold uppercase bg-purple-100 text-purple-800">
           ACH
@@ -83,7 +92,7 @@ export default function PaymentHistory() {
   };
 
   // Loading state
-  if (isLoading) {
+  if (isRefreshingPayments) {
     return (
       <div className="bg-white dark:bg-charney-charcoal rounded-xl border border-charney-light-gray dark:border-charney-gray/30 p-6">
         <div className="text-center">
@@ -101,7 +110,7 @@ export default function PaymentHistory() {
     );
   }
 
-  if (historyData.length === 0) {
+  if (filteredHistoryData.length === 0) {
     return (
       <div className="rounded-xl border border-charney-light-gray bg-white p-8 shadow-sm dark:border-charney-gray/70 dark:bg-charney-charcoal/50">
         <div className="text-center">
@@ -129,7 +138,7 @@ export default function PaymentHistory() {
             Payment <span className="text-charney-red">History</span>
           </h3>
           <p className="text-sm text-charney-gray">
-            {historyData.length} payment{historyData.length !== 1 ? 's' : ''} found
+            {filteredHistoryData.length} payment{filteredHistoryData.length !== 1 ? 's' : ''} found
           </p>
         </div>
 
@@ -172,31 +181,31 @@ export default function PaymentHistory() {
             </tr>
           </thead>
           <tbody>
-            {historyData.map((item) => (
+            {filteredHistoryData.map((item) => (
               <tr
                 key={item.id}
                 className="cursor-pointer hover:bg-charney-cream/50 dark:hover:bg-charney-cream/10"
               >
                 <td className="p-4 font-bold">
-                  {item.agent.full_name}
+                  {item.broker}
                 </td>
                 <td className="p-4 text-charney-gray">
-                  {item.transaction.property_address}
+                  {item.propertyAddress}
                 </td>
                 <td className="p-4 text-center text-charney-gray">
-                  {formatCurrency(item.payout_amount)}
+                  {formatCurrency(item.salePrice * (item.grossCommissionRate / 100))}
                 </td>
                 <td className="p-4 text-charney-gray">
-                  {formatDate(item.paid_at || item.scheduled_at)}
+                  {formatDate(item._rawTransaction?.paid_at || item._rawTransaction?.scheduled_payout_date)}
                 </td>
                 <td className="p-4 text-center">
-                  {getStatusBadge(item.status)}
+                  {getStatusBadge(item._rawTransaction?.payment_status || (item._rawTransaction?.paid_at ? 'paid' : 'ready'))}
                 </td>
                 <td className="p-4 text-center">
-                  {getAchBadge(item.ach_reference)}
+                  {getAchBadge(item._rawTransaction?.payment_method)}
                 </td>
                 <td className="p-4 text-charney-gray font-mono">
-                  {item.ach_reference || item.id}
+                  {item._rawTransaction?.ach_reference || item._rawTransaction?.payment_batch_id || item.id}
                 </td>
               </tr>
             ))}
@@ -210,22 +219,22 @@ export default function PaymentHistory() {
           <p className="text-sm font-medium text-charney-gray">Total Paid</p>
           <p className="text-xl font-bold text-charney-black dark:text-charney-white">
             {formatCurrency(
-              historyData
-                .filter(item => item.status === 'paid')
-                .reduce((sum, item) => sum + item.payout_amount, 0)
+              filteredHistoryData
+                .filter(item => item._rawTransaction?.paid_at)
+                .reduce((sum, item) => sum + (item.salePrice * (item.grossCommissionRate / 100)), 0)
             )}
           </p>
         </div>
         <div className="bg-charney-cream/30 dark:bg-charney-slate/30 rounded-lg p-4">
           <p className="text-sm font-medium text-charney-gray">ACH Payments</p>
           <p className="text-xl font-bold text-charney-black dark:text-charney-white">
-            {historyData.filter(item => item.ach_reference).length}
+            {filteredHistoryData.filter(item => item._rawTransaction?.payment_method === 'ach').length}
           </p>
         </div>
         <div className="bg-charney-cream/30 dark:bg-charney-slate/30 rounded-lg p-4">
           <p className="text-sm font-medium text-charney-gray">Manual Payments</p>
           <p className="text-xl font-bold text-charney-black dark:text-charney-white">
-            {historyData.filter(item => !item.ach_reference).length}
+            {filteredHistoryData.filter(item => item._rawTransaction?.payment_method === 'manual' || !item._rawTransaction?.payment_method).length}
           </p>
         </div>
       </div>

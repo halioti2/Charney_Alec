@@ -1,50 +1,47 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { useToast } from '../../../context/ToastContext.jsx';
-import { usePayoutQueue, usePayoutScheduling } from '../hooks/usePaymentsAPI';
+import { useDashboardContext } from '../../../context/DashboardContext.jsx';
 import SchedulePayoutModal from './SchedulePayoutModal.jsx';
 
 export default function PayoutQueue() {
   const [selectedItems, setSelectedItems] = useState(new Set());
   const [showModal, setShowModal] = useState(false);
-  const [payoutItems, setPayoutItems] = useState([]);
 
   const { pushToast } = useToast();
-  const { fetchPayoutQueue, isLoading, error, clearError } = usePayoutQueue();
-  const { schedulePayout, isScheduling } = usePayoutScheduling();
+  const { 
+    paymentData, 
+    isRefreshingPayments, 
+    refetchPaymentData 
+  } = useDashboardContext();
 
-  // Load payout queue data on component mount
-  useEffect(() => {
-    const loadPayoutQueue = async () => {
-      const data = await fetchPayoutQueue();
-      setPayoutItems(data);
-    };
-
-    loadPayoutQueue();
-  }, [fetchPayoutQueue]);
-
-  // Handle API errors
-  useEffect(() => {
-    if (error) {
+  // Handle refresh manually when needed
+  const handleRefresh = async () => {
+    try {
+      await refetchPaymentData();
       pushToast({
-        message: `Error loading payout queue: ${error}`,
+        message: "Payout queue refreshed successfully",
+        type: "success"
+      });
+    } catch (error) {
+      pushToast({
+        message: `Error refreshing payout queue: ${error.message}`,
         type: "error"
       });
-      clearError();
     }
-  }, [error, pushToast, clearError]);
+  };
 
   // Calculate running total
   const totalPayout = useMemo(() =>
-    payoutItems
+    paymentData
       .filter(item => selectedItems.has(item.id))
-      .reduce((sum, item) => sum + item.payout_amount, 0),
-    [selectedItems, payoutItems]
+      .reduce((sum, item) => sum + (item.salePrice * (item.grossCommissionRate / 100)), 0),
+    [selectedItems, paymentData]
   );
 
   // Get selected items data
   const selectedItemsData = useMemo(() =>
-    payoutItems.filter(item => selectedItems.has(item.id)),
-    [selectedItems, payoutItems]
+    paymentData.filter(item => selectedItems.has(item.id)),
+    [selectedItems, paymentData]
   );
 
   const handleSelectItem = (itemId) => {
@@ -60,10 +57,10 @@ export default function PayoutQueue() {
   };
 
   const handleSelectAll = () => {
-    if (selectedItems.size === payoutItems.length) {
+    if (selectedItems.size === paymentData.length) {
       setSelectedItems(new Set());
     } else {
-      setSelectedItems(new Set(payoutItems.map(item => item.id)));
+      setSelectedItems(new Set(paymentData.map(item => item.id)));
     }
   };
 
@@ -78,8 +75,8 @@ export default function PayoutQueue() {
     }
 
     // Additional validation: check for valid amounts
-    const selectedItemsData = payoutItems.filter(item => selectedItems.has(item.id));
-    const invalidItems = selectedItemsData.filter(item => item.payout_amount <= 0);
+    const selectedItemsData = paymentData.filter(item => selectedItems.has(item.id));
+    const invalidItems = selectedItemsData.filter(item => (item.salePrice * (item.grossCommissionRate / 100)) <= 0);
 
     if (invalidItems.length > 0) {
       pushToast({
@@ -93,27 +90,57 @@ export default function PayoutQueue() {
   };
 
   const handleConfirmPayout = async (payoutData) => {
-    const selectedItemsData = payoutItems.filter(item => selectedItems.has(item.id));
+    const selectedItemsData = paymentData.filter(item => selectedItems.has(item.id));
 
-    const result = await schedulePayout({
-      selectedItems: selectedItemsData,
-      achEnabled: payoutData.achEnabled,
-      batchNote: payoutData.batchNote
-    });
+    try {
+      // Get the auth token from local storage or context (following same pattern as coordinator)
+      const token = localStorage.getItem('supabase.auth.token') || 
+                   JSON.parse(localStorage.getItem('sb-' + process.env.VITE_SUPABASE_URL.split('//')[1].split('.')[0] + '-auth-token'))?.access_token;
 
-    if (result) {
-      // Success - refresh the queue and clear selections
-      const updatedData = await fetchPayoutQueue();
-      setPayoutItems(updatedData);
+      if (!token) {
+        throw new Error('Authentication required');
+      }
+
+      // Generate batch ID
+      const batchId = `batch_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+      const response = await fetch('/.netlify/functions/process-payment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          transactionIds: selectedItemsData.map(item => item.id),
+          batchId: batchId,
+          achEnabled: payoutData.achEnabled,
+          batchNote: payoutData.batchNote
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Failed to process payment');
+      }
+
+      // Success - refresh the payment data and clear selections
+      await refetchPaymentData();
       setSelectedItems(new Set());
       setShowModal(false);
 
       pushToast({
-        message: `Successfully scheduled ${result.scheduledCount} payout${result.scheduledCount !== 1 ? 's' : ''} (Batch: ${result.batchId})`,
+        message: `Successfully scheduled ${result.processed_count} payout${result.processed_count !== 1 ? 's' : ''} (Batch: ${result.batch_id})`,
         type: "success"
       });
+
+    } catch (error) {
+      console.error('Error processing payout:', error);
+      pushToast({
+        message: `Error scheduling payout: ${error.message}`,
+        type: "error"
+      });
     }
-    // Error handling is done by the hook and displayed via useEffect
   };
 
   const formatCurrency = (amount) => {
@@ -134,7 +161,7 @@ export default function PayoutQueue() {
   };
 
   // Loading state
-  if (isLoading) {
+  if (isRefreshingPayments) {
     return (
       <div className="bg-white dark:bg-charney-charcoal rounded-xl border border-charney-light-gray dark:border-charney-gray/30 p-6">
         <div className="text-center">
@@ -153,7 +180,7 @@ export default function PayoutQueue() {
   }
 
   // Empty state
-  if (payoutItems.length === 0) {
+  if (paymentData.length === 0) {
     return (
       <div className="rounded-xl border border-charney-light-gray bg-white p-8 shadow-sm dark:border-charney-gray/70 dark:bg-charney-charcoal/50">
         <div className="text-center">
@@ -201,7 +228,7 @@ export default function PayoutQueue() {
               <th className="p-4">
                 <input
                   type="checkbox"
-                  checked={selectedItems.size === payoutItems.length && payoutItems.length > 0}
+                  checked={selectedItems.size === paymentData.length && paymentData.length > 0}
                   onChange={handleSelectAll}
                   className="rounded border-charney-gray focus:ring-charney-red"
                 />
@@ -214,7 +241,7 @@ export default function PayoutQueue() {
             </tr>
           </thead>
           <tbody>
-            {payoutItems.map((item) => (
+            {paymentData.map((item) => (
               <tr
                 key={item.id}
                 className="cursor-pointer hover:bg-charney-cream/50 dark:hover:bg-charney-cream/10"
@@ -228,27 +255,22 @@ export default function PayoutQueue() {
                   />
                 </td>
                 <td className="p-4 font-bold">
-                  {item.agent.full_name}
+                  {item.broker}
                 </td>
                 <td className="p-4 text-charney-gray">
-                  {item.transaction.property_address}
+                  {item.propertyAddress}
                 </td>
                 <td className="p-4 text-center text-charney-gray">
-                  {formatCurrency(item.payout_amount)}
+                  {formatCurrency(item.salePrice * (item.grossCommissionRate / 100))}
                 </td>
                 <td className="p-4 text-charney-gray">
-                  {formatDate(item.created_at)}
+                  {formatDate(item.createdAt)}
                 </td>
                 <td className="p-4 text-center">
-                  {item.auto_ach ? (
-                    <span className="inline-flex items-center rounded-sm px-2.5 py-1 text-xs font-bold uppercase bg-green-100 text-green-800">
-                      ACH
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center rounded-sm px-2.5 py-1 text-xs font-bold uppercase bg-yellow-100 text-yellow-800">
-                      Manual
-                    </span>
-                  )}
+                  {/* Default to manual for now, could be enhanced based on agent settings */}
+                  <span className="inline-flex items-center rounded-sm px-2.5 py-1 text-xs font-bold uppercase bg-yellow-100 text-yellow-800">
+                    Manual
+                  </span>
                 </td>
               </tr>
             ))}
