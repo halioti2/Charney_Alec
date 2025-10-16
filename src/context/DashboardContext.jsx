@@ -86,8 +86,11 @@ export function DashboardProvider({ children, initialState = {} }) {
   const refetchCoordinatorData = useCallback(async () => {
     setIsRefreshing(true);
     try {
+      console.log('Fetching transactions from Supabase...');
       const rawTransactions = await fetchTransactions();
+      console.log('Raw transactions:', rawTransactions);
       const transformedTransactions = transformTransactionsForUI(rawTransactions);
+      console.log('Transformed transactions:', transformedTransactions);
       setTransactions(transformedTransactions);
       setCoordinatorData({ lastUpdated: new Date().toISOString() });
     } catch (error) {
@@ -101,13 +104,15 @@ export function DashboardProvider({ children, initialState = {} }) {
     // Clean up existing subscriptions
     realtimeSubscriptions.forEach(sub => sub.unsubscribe());
 
-    const transactionSub = subscribeToTransactions((payload) => {
+    const transactionSub = subscribeToTransactions(() => {
       // Refresh data when transactions change
+      console.log('Realtime: Transaction update detected, refetching...');
       refetchCoordinatorData();
     });
 
-    const evidenceSub = subscribeToCommissionEvidences((payload) => {
+    const evidenceSub = subscribeToCommissionEvidences(() => {
       // Refresh data when commission evidences change
+      console.log('Realtime: Evidence update detected, refetching...');
       refetchCoordinatorData();
     });
 
@@ -117,15 +122,35 @@ export function DashboardProvider({ children, initialState = {} }) {
       transactionSub.unsubscribe();
       evidenceSub.unsubscribe();
     };
-  }, [realtimeSubscriptions, refetchCoordinatorData]);
+  }, [refetchCoordinatorData]); // Remove realtimeSubscriptions dependency
 
   // Initial data fetch and subscription setup
   useEffect(() => {
-    refetchCoordinatorData();
-    const unsubscribe = subscribeToTransactionUpdates();
+    let currentSubscriptions = [];
+
+    const setupData = async () => {
+      // Initial fetch
+      await refetchCoordinatorData();
+
+      // Setup subscriptions
+      const transactionSub = subscribeToTransactions(() => {
+        console.log('Realtime: Transaction update detected, refetching...');
+        refetchCoordinatorData();
+      });
+
+      const evidenceSub = subscribeToCommissionEvidences(() => {
+        console.log('Realtime: Evidence update detected, refetching...');
+        refetchCoordinatorData();
+      });
+
+      currentSubscriptions = [transactionSub, evidenceSub];
+      setRealtimeSubscriptions(currentSubscriptions);
+    };
+
+    setupData();
     
     return () => {
-      if (unsubscribe) unsubscribe();
+      currentSubscriptions.forEach(sub => sub.unsubscribe());
     };
   }, []); // Empty dependency array for initial setup only
 

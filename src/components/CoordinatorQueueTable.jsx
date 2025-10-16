@@ -13,6 +13,10 @@ const CoordinatorQueueTable = () => {
   const { transactions, showPdfAudit, isRefreshing } = useDashboardContext();
   const [isExpanded, setIsExpanded] = useState(false);
 
+  // Debug logging
+  console.log('CoordinatorQueueTable - transactions:', transactions);
+  console.log('CoordinatorQueueTable - isRefreshing:', isRefreshing);
+
   const rows = useMemo(
     () =>
       transactions.map((transaction) => ({
@@ -34,9 +38,20 @@ const CoordinatorQueueTable = () => {
 
   return (
     <div className="card p-6">
-      <h3 className="mb-4 text-2xl font-black tracking-tighter">
-        Commission <span className="text-charney-red">Queue</span>
-      </h3>
+      <div className="mb-4 flex items-center justify-between">
+        <h3 className="text-2xl font-black tracking-tighter">
+          Commission <span className="text-charney-red">Queue</span>
+          <span className="ml-2 text-sm font-normal text-gray-500">
+            ({transactions.length} transactions)
+          </span>
+        </h3>
+        <button
+          onClick={() => window.location.reload()}
+          className="rounded bg-charney-red px-3 py-1 text-sm text-white hover:bg-charney-red/90"
+        >
+          Refresh Page
+        </button>
+      </div>
       <div className="overflow-x-auto" role="region" aria-label="Commission queue">
         <table className="w-full text-left text-sm">
           <thead className="text-xs uppercase">
