@@ -67,14 +67,14 @@ export default function PayoutFailureBanner({ failures = [], onDismiss, onRetry 
             <button
               type="button"
               onClick={handleRetryAll}
-              className="rounded-md bg-red-100 px-3 py-1.5 text-xs font-medium text-red-800 hover:bg-red-200 dark:bg-red-800/30 dark:text-red-200 dark:hover:bg-red-800/50 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+              className="bg-red-100 px-3 py-1.5 text-xs font-bold uppercase text-red-800 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
             >
               Retry All
             </button>
             <button
               type="button"
               onClick={handleDismissAll}
-              className="rounded-md bg-red-100 px-3 py-1.5 text-xs font-medium text-red-800 hover:bg-red-200 dark:bg-red-800/30 dark:text-red-200 dark:hover:bg-red-800/50 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+              className="bg-red-100 px-3 py-1.5 text-xs font-bold uppercase text-red-800 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
             >
               Dismiss All
             </button>
