@@ -9,8 +9,8 @@ const statusColors = {
   'Awaiting Info': 'bg-orange-100 text-orange-800',
 };
 
-export default function CoordinatorQueueTable() {
-  const { commissions, setActiveCommissionId, setModalFocus, setPanelAgent } = useDashboardContext();
+const CoordinatorQueueTable = () => {
+  const { commissions, showPdfAudit } = useDashboardContext();
 
   const rows = useMemo(
     () =>
@@ -21,6 +21,12 @@ export default function CoordinatorQueueTable() {
       })),
     [commissions],
   );
+
+  const handleProcessClick = (e, commissionId) => {
+    e.preventDefault();
+    e.stopPropagation();
+    showPdfAudit(commissionId);
+  };
 
   return (
     <div className="card p-6">
@@ -35,34 +41,31 @@ export default function CoordinatorQueueTable() {
               <th className="p-4">Property</th>
               <th className="p-4">Total Commission</th>
               <th className="p-4">Status</th>
+              <th className="p-4">Action</th>
             </tr>
           </thead>
           <tbody>
             {rows.map((commission) => (
               <tr
                 key={commission.id}
-                className="cursor-pointer hover:bg-charney-cream/50 dark:hover:bg-charney-cream/10"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  setModalFocus?.('full');
-                  setActiveCommissionId(commission.id);
-                }}
+                className="hover:bg-charney-cream/50 dark:hover:bg-charney-cream/10"
               >
-                <td
-                  className="p-4 font-bold"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    setPanelAgent?.(commission.id);
-                  }}
-                >
-                  {commission.broker}
-                </td>
-                <td className="p-4 text-charney-gray">{commission.property}</td>
-                <td className="p-4 text-charney-gray">{formatCurrency(commission.totalCommission)}</td>
+                <td className="p-4">{commission.broker}</td>
+                <td className="p-4">{commission.propertyAddress}</td>
+                <td className="p-4">{formatCurrency(commission.totalCommission)}</td>
                 <td className="p-4">
-                  <span className={`inline-flex items-center rounded-sm px-2.5 py-1 text-xs font-bold uppercase ${commission.statusClass}`}>
+                  <span className={`rounded-full px-2 py-1 text-xs ${commission.statusClass}`}>
                     {commission.status}
                   </span>
+                </td>
+                <td className="p-4">
+                  <button
+                    type="button"
+                    onClick={(e) => handleProcessClick(e, commission.id)}
+                    className="rounded bg-charney-red px-4 py-2 text-sm font-medium text-white hover:bg-charney-red/90 transition-colors"
+                  >
+                    Process
+                  </button>
                 </td>
               </tr>
             ))}
@@ -71,4 +74,6 @@ export default function CoordinatorQueueTable() {
       </div>
     </div>
   );
-}
+};
+
+export default CoordinatorQueueTable;

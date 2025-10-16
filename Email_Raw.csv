@@ -1,0 +1,52 @@
+
+received_at,created_at,sender,receiver,subject,attachements,status,parsed_at,parsed_rec_id
+2023-10-26 10:00:00,2023-10-26 09:55:00+00,sales@example.com,commissions@yourcompany.com,Commission Report Q3 2023,TRUE,processed,2023-10-26 10:05:00,PRID-00001
+2023-10-25 14:30:00,2023-10-25 14:25:00+00,partner@anotherco.com,commissions@yourcompany.com,Payment Confirmation Oct 2023,FALSE,pending,2023-10-25 14:35:00,PRID-00002
+2023-10-24 09:15:00,2023-10-24 09:10:00+00,finance@thirdparty.com,commissions@yourcompany.com,Invoice #2023-10-001,TRUE,processed,2023-10-24 09:20:00,PRID-00003
+2023-10-23 11:45:00,2023-10-23 11:40:00+00,support@example.com,commissions@yourcompany.com,Question about Q2 commissions,FALSE,error,2023-10-23 11:50:00,PRID-00004
+2023-10-22 16:00:00,2023-10-22 15:55:00+00,ceo@bigcompany.com,commissions@yourcompany.com,FY23 Commission Structure,TRUE,processed,2023-10-22 16:05:00,PRID-00005
+2023-10-21 08:30:00,2023-10-21 08:25:00+00,hr@example.com,commissions@yourcompany.com,New Hire Commission Plan,FALSE,pending,2023-10-21 08:35:00,PRID-00006
+2023-10-20 13:10:00,2023-10-20 13:05:00+00,vendor@supplyco.com,commissions@yourcompany.com,Quarterly Sales Data,TRUE,processed,2023-10-20 13:15:00,PRID-00007
+2023-10-19 10:20:00,2023-10-19 10:15:00+00,agent@insurance.com,commissions@yourcompany.com,Policy Renewal Commissions,FALSE,processed,2023-10-19 10:25:00,PRID-00008
+2023-10-18 15:00:00,2023-10-18 14:55:00+00,manager@department.com,commissions@yourcompany.com,Team Performance Bonus,TRUE,pending,2023-10-18 15:05:00,PRID-00009
+2023-10-17 09:00:00,2023-10-17 08:55:00+00,client@customer.com,commissions@yourcompany.com,Project Milestone Payment,FALSE,processed,2023-10-17 09:05:00,PRID-00010
+2023-10-16 11:30:00,2023-10-16 11:25:00+00,marketing@brand.com,commissions@yourcompany.com,Campaign Commission Details,TRUE,processed,2023-10-16 11:35:00,PRID-00011
+2023-10-15 14:00:00,2023-10-15 13:55:00+00,investor@fund.com,commissions@yourcompany.com,Annual Earnings Statement,FALSE,pending,2023-10-15 14:05:00,PRID-00012
+2023-10-14 08:00:00,2023-10-14 07:55:00+00,legal@firm.com,commissions@yourcompany.com,Commission Agreement Review,TRUE,processed,2023-10-14 08:05:00,PRID-00013
+2023-10-13 16:45:00,2023-10-13 16:40:00+00,accountant@cpa.com,commissions@yourcompany.com,Tax Implications of Commissions,FALSE,error,2023-10-13 16:50:00,PRID-00014
+2023-10-12 10:55:00,2023-10-12 10:50:00+00,developer@tech.com,commissions@yourcompany.com,New Feature Commission Model,TRUE,processed,2023-10-12 11:00:00,PRID-00015
+2023-10-11 13:20:00,2023-10-11 13:15:00+00,salesrep1@yourcompany.com,commissions@yourcompany.com,My Q3 Commission Statement,FALSE,pending,2023-10-11 13:25:00,PRID-00016
+2023-10-10 09:40:00,2023-10-10 09:35:00+00,partnerships@global.com,commissions@yourcompany.com,International Commission Structure,TRUE,processed,2023-10-10 09:45:00,PRID-00017
+2023-10-09 12:10:00,2023-10-09 12:05:00+00,customer@complaint.com,commissions@yourcompany.com,Incorrect Commission Calculation,FALSE,error,2023-10-09 12:15:00,PRID-00018
+2023-10-08 15:30:00,2023-10-08 15:25:00+00,product@innovation.com,commissions@yourcompany.com,New Product Launch Commissions,TRUE,processed,2023-10-08 15:35:00,PRID-00019
+2023-10-07 10:00:00,2023-10-07 09:55:00+00,distributor@network.com,commissions@yourcompany.com,Monthly Sales Figures,FALSE,processed,2023-10-07 10:05:00,PRID-00020
+2023-10-06 14:15:00,2023-10-06 14:10:00+00,affiliate@marketing.com,commissions@yourcompany.com,Affiliate Program Earnings,TRUE,pending,2023-10-06 14:20:00,PRID-00021
+2023-10-05 08:45:00,2023-10-05 08:40:00+00,events@conference.com,commissions@yourcompany.com,Sponsorship Commission,FALSE,processed,2023-10-05 08:50:00,PRID-00022
+2023-10-04 11:00:00,2023-10-04 10:55:00+00,operations@hq.com,commissions@yourcompany.com,Commission Payout Schedule,TRUE,processed,2023-10-04 11:05:00,PRID-00023
+2023-10-03 16:20:00,2023-10-03 16:15:00+00,compliance@regulations.com,commissions@yourcompany.com,Regulatory Commission Review,FALSE,pending,2023-10-03 16:25:00,PRID-00024
+2023-10-02 09:30:00,2023-10-02 09:25:00+00,consultant@expert.com,commissions@yourcompany.com,Commission System Optimization,TRUE,processed,2023-10-02 09:35:00,PRID-00025
+2023-10-01 12:40:00,2023-10-01 12:35:00+00,ceoassistant@yourcompany.com,commissions@yourcompany.com,Urgent Commission Inquiry,FALSE,processed,2023-10-01 12:45:00,PRID-00026
+2023-09-30 15:00:00,2023-09-30 14:55:00+00,vendor@software.com,commissions@yourcompany.com,Software License Commissions,TRUE,processed,2023-09-30 15:05:00,PRID-00027
+2023-09-29 10:10:00,2023-09-29 10:05:00+00,client@bigaccount.com,commissions@yourcompany.com,Annual Contract Renewal,FALSE,pending,2023-09-29 10:15:00,PRID-00028
+2023-09-28 13:30:00,2023-09-28 13:25:00+00,partner@reseller.com,commissions@yourcompany.com,Reseller Program Commissions,TRUE,processed,2023-09-28 13:35:00,PRID-00029
+2023-09-27 09:00:00,2023-09-27 08:55:00+00,salesrep2@yourcompany.com,commissions@yourcompany.com,Clarification on Q3 Bonus,FALSE,error,2023-09-27 09:05:00,PRID-00030
+2023-09-26 11:50:00,2023-09-26 11:45:00+00,marketing@digital.com,commissions@yourcompany.com,Digital Ad Spend Commissions,TRUE,processed,2023-09-26 11:55:00,PRID-00031
+2023-09-25 14:00:00,2023-09-25 13:55:00+00,hr@onboarding.com,commissions@yourcompany.com,New Employee Commission Setup,FALSE,pending,2023-09-25 14:05:00,PRID-00032
+2023-09-24 08:00:00,2023-09-24 07:55:00+00,finance@audit.com,commissions@yourcompany.com,Commission Audit Request,TRUE,processed,2023-09-24 08:05:00,PRID-00033
+2023-09-23 16:10:00,2023-09-23 16:05:00+00,support@portal.com,commissions@yourcompany.com,Issue with Commission Access,FALSE,error,2023-09-23 16:15:00,PRID-00034
+2023-09-22 10:25:00,2023-09-22 10:20:00+00,product@roadmap.com,commissions@yourcompany.com,Future Product Commission Model,TRUE,processed,2023-09-22 10:30:00,PRID-00035
+2023-09-21 13:45:00,2023-09-21 13:40:00+00,salesops@yourcompany.com,commissions@yourcompany.com,Commission Process Improvement,FALSE,pending,2023-09-21 13:50:00,PRID-00036
+2023-09-20 09:15:00,2023-09-20 09:10:00+00,legal@contracts.com,commissions@yourcompany.com,Review of Commission Clauses,TRUE,processed,2023-09-20 09:20:00,PRID-00037
+2023-09-19 12:00:00,2023-09-19 11:55:00+00,investorrelations@yourcompany.com,commissions@yourcompany.com,Shareholder Commission Report,FALSE,processed,2023-09-19 12:05:00,PRID-00038
+2023-09-18 15:20:00,2023-09-18 15:15:00+00,vendor@crm.com,commissions@yourcompany.com,CRM Integration Commissions,TRUE,processed,2023-09-18 15:25:00,PRID-00039
+2023-09-17 10:00:00,2023-09-17 09:55:00+00,client@mediumaccount.com,commissions@yourcompany.com,Service Renewal Commission,FALSE,pending,2023-09-17 10:05:00,PRID-00040
+2023-09-16 14:30:00,2023-09-16 14:25:00+00,partner@agency.com,commissions@yourcompany.com,Agency Partnership Commissions,TRUE,processed,2023-09-16 14:35:00,PRID-00041
+2023-09-15 08:30:00,2023-09-15 08:25:00+00,salesrep3@yourcompany.com,commissions@yourcompany.com,Question about previous payout,FALSE,error,2023-09-15 08:35:00,PRID-00042
+2023-09-14 11:40:00,2023-09-14 11:35:00+00,marketing@content.com,commissions@yourcompany.com,Content Marketing Commissions,TRUE,processed,2023-09-14 11:45:00,PRID-00043
+2023-09-13 16:00:00,2023-09-13 15:55:00+00,hr@benefits.com,commissions@yourcompany.com,Commission Benefits Update,FALSE,pending,2023-09-13 16:05:00,PRID-00044
+2023-09-12 09:50:00,2023-09-12 09:45:00+00,finance@treasury.com,commissions@yourcompany.com,Commission Payment Reconciliation,TRUE,processed,2023-09-12 09:55:00,PRID-00045
+2023-09-11 12:20:00,2023-09-11 12:15:00+00,support@helpdesk.com,commissions@yourcompany.com,Commission Inquiry from Customer,FALSE,error,2023-09-11 12:25:00,PRID-00046
+2023-09-10 15:00:00,2023-09-10 14:55:00+00,product@management.com,commissions@yourcompany.com,Product Lifecycle Commissions,TRUE,processed,2023-09-10 15:05:00,PRID-00047
+2023-09-09 10:30:00,2023-09-09 10:25:00+00,distributor@channel.com,commissions@yourcompany.com,Channel Sales Commission,FALSE,processed,2023-09-09 10:35:00,PRID-00048
+2023-09-08 13:00:00,2023-09-08 12:55:00+00,affiliate@program.com,commissions@yourcompany.com,Affiliate Commission Statement,TRUE,pending,2023-09-08 13:05:00,PRID-00049
+2023-09-07 09:00:00,2023-09-07 08:55:00+00,events@tradeshow.com,commissions@yourcompany.com,Tradeshow Lead Commissions,FALSE,processed,2023-09-07 09:05:00,PRID-00050

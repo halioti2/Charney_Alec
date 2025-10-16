@@ -5,7 +5,7 @@
 
 ## Decision
 
-- Model a canonical `CommissionRecord` by joining Supabase `transactions`, `agents`, `brokerages`, and `evidence`.  
+- Model a canonical `CommissionRecord` by joining Supabase `transactions`, `agents`, `brokerages`, and `commission_evidences`.
 - Add a new `transaction_events` table to persist audit trail entries that feed the broker panel/modal history.  
 - Build dedicated React components for the modal (email chain, calculation form, actions, TRID view) and manage state through `DashboardContext`.  
 - Maintain existing commission math via shared helper functions; future components can reuse them.  

@@ -15,7 +15,7 @@
 - `transactions`: final deal values (sale price, commission %, agent split, status, referrals JSON).
 - `agents`: name, email, default split/cap (support calculation defaults).
 - `brokerages`: franchise fee %, E&O, transaction fee (global deductions).
-- `evidence`: text snippets, attachments for email/source view.
+- `commission_evidences`: JSON snapshots of extracted fields per source document (replaces legacy `evidence` table).
 - **To add**: `transaction_events` table for audit history (type, actor, timestamp, payload).
 
 ### CommissionRecord (frontend derived type)
@@ -34,7 +34,7 @@ type CommissionRecord = {
   agent: { id: string; name: string; email: string } | null;
   brokerage: { id: string; franchiseFeePct: number; eoFee: number; transactionFee: number };
   referrals: Array<{ name: string; percent: number }>;
-  evidence: EvidenceSnippet[];
+  evidences: CommissionEvidence[];
   auditTrail: TransactionEvent[];
 };
 ```
@@ -46,13 +46,13 @@ All derived values (GCI, agent net, cap progress) come from `calculateCommission
 1. **Data Loader**
    - Create `useCommissionRecord(id)` hook that returns `CommissionRecord` (mock adapter now).
    - Map `transactions` + `agents` + `brokerages`; flatten `final_referrals`.
-   - Convert `evidence` rows into display chain.
+   - Convert `commission_evidences` rows into display chain grouped by source document.
    - Stub `auditTrail` while `transaction_events` table is pending.
 
 2. **React Components**
 - `CommissionModal` (modal shell, portal, open/close state).
 - `CommissionTabs` (history vs. plan).
-- `EmailChain` (renders evidence snippets).
+- `EmailChain` (renders commission evidence snippets).
 - `CommissionCalculationForm` (controlled inputs + breakdown, leverages `calculateCommission`, supports history two-column card layout).
    - `CommissionActions` (Approve/Request/Flag buttons).
 - `CommissionTRIDView` (printable document component – see `docs/trid-modal-checklist.md`).
