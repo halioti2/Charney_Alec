@@ -291,6 +291,7 @@ export function transformPayoutsForUI(payouts) {
       paid_at: payout.paid_at,
       failure_reason: payout.failure_reason,
       created_at: payout.created_at,
+      createdAt: payout.created_at, // Alias for UI compatibility
       
       // Transform field names to match UI expectations
       broker: agent?.full_name || transaction?.final_broker_agent_name || 'Unknown Agent',

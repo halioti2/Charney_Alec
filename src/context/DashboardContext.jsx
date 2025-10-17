@@ -14,6 +14,7 @@ import {
   fetchCommissionPayouts,
   transformPayoutsForUI,
 } from '../lib/supabaseService.js';
+import { supabase } from '../lib/supabaseClient.js';
 
 const DashboardContext = createContext(undefined);
 
@@ -123,8 +124,9 @@ export function DashboardProvider({ children, initialState = {} }) {
         p => p.status === 'ready' && p.payout_amount > 0
       );
       
+      // Payment history shows all payouts for comprehensive view
       const paymentHistoryData = transformedPayouts.filter(
-        p => p.status === 'paid' || p.status === 'scheduled'
+        p => p.payout_amount > 0 // All payouts with valid amounts
       );
       
       console.log('Raw payouts from Supabase:', rawPayouts);
@@ -145,25 +147,47 @@ export function DashboardProvider({ children, initialState = {} }) {
   }, []);
 
   // Payment Operation Handlers (Hybrid Model - Call Netlify Functions)
-  const schedulePayouts = useCallback(async (payoutIds) => {
+  const schedulePayouts = useCallback(async (payoutIds, options = {}) => {
     try {
       console.log('Scheduling payouts via Netlify function:', payoutIds);
+      
+      // Get session for authentication
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('No authentication session found');
+      }
       
       const response = await fetch('/.netlify/functions/schedule-payout', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${await window.supabase?.auth?.getSession()?.data?.session?.access_token}`
+          'Authorization': `Bearer ${session.access_token}`
         },
         body: JSON.stringify({
-          payout_ids: payoutIds,
-          auto_process: false // Manual scheduling by default
+          payout_ids: payoutIds, // Send as array for bulk processing
+          scheduled_date: options.scheduledDate || (() => {
+            // Create date in local timezone to avoid UTC conversion issues
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+          })(), // Default to today in local timezone
+          payment_method: options.paymentMethod || 'manual', // Default to manual
+          auto_ach: options.achEnabled || false,
+          provider_details: options.providerDetails || null
         })
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to schedule payouts');
+        let errorMessage = 'Failed to schedule payouts';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorData.message || errorMessage;
+        } catch {
+          errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        }
+        throw new Error(errorMessage);
       }
 
       const result = await response.json();
@@ -179,9 +203,15 @@ export function DashboardProvider({ children, initialState = {} }) {
     }
   }, [refetchPaymentData]);
 
-  const processPayment = useCallback(async (payoutId, paymentMethod = 'ach') => {
+  const processPayment = useCallback(async (payoutId, paymentMethod) => {
     try {
       console.log('Processing payment via Netlify function:', { payoutId, paymentMethod });
+      
+      // Get session for authentication
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('No authentication session found');
+      }
       
       const functionName = paymentMethod === 'ach' ? 'process-ach-payment' : 'process-payment';
       
@@ -189,7 +219,7 @@ export function DashboardProvider({ children, initialState = {} }) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${await window.supabase?.auth?.getSession()?.data?.session?.access_token}`
+          'Authorization': `Bearer ${session.access_token}`
         },
         body: JSON.stringify({
           payout_id: payoutId,
@@ -219,11 +249,17 @@ export function DashboardProvider({ children, initialState = {} }) {
     try {
       console.log('Updating payout status via Netlify function:', { payoutId, status, metadata });
       
+      // Get session for authentication
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('No authentication session found');
+      }
+      
       const response = await fetch('/.netlify/functions/update-payout-status', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${await window.supabase?.auth?.getSession()?.data?.session?.access_token}`
+          'Authorization': `Bearer ${session.access_token}`
         },
         body: JSON.stringify({
           payout_id: payoutId,

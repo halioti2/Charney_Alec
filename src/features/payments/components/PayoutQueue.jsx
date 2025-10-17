@@ -30,7 +30,10 @@ export default function PayoutQueue() {
         broker: item.broker,
         propertyAddress: item.propertyAddress,
         payout_amount: item.payout_amount,
+        payout_amount_type: typeof item.payout_amount,
         salePrice: item.salePrice,
+        createdAt: item.createdAt,
+        created_at_raw: item.created_at,
         status: item.status,
         auto_ach: item.auto_ach,
         created_at: item.created_at
@@ -146,7 +149,14 @@ export default function PayoutQueue() {
         payoutData: payoutData
       });
 
-      const result = await schedulePayouts(selectedIds);
+      // Pass payout options from the modal
+      const options = {
+        paymentMethod: payoutData.achEnabled ? 'ach' : 'manual',
+        achEnabled: payoutData.achEnabled || false,
+        scheduledDate: new Date().toISOString().split('T')[0] // Today's date
+      };
+
+      const result = await schedulePayouts(selectedIds, options);
 
       if (!result.success) {
         throw new Error(result.error || 'Failed to schedule payouts');
@@ -291,7 +301,7 @@ export default function PayoutQueue() {
                   {item.propertyAddress}
                 </td>
                 <td className="p-4 text-center text-charney-gray">
-                  {formatCurrency(item.salePrice * (item.grossCommissionRate / 100))}
+                  {formatCurrency(item.payout_amount || 0)}
                 </td>
                 <td className="p-4 text-charney-gray">
                   {formatDate(item.createdAt)}

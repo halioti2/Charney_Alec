@@ -12,26 +12,57 @@ export default function PaymentHistory() {
 
   // Filter payment history data based on filters
   const filteredHistoryData = useMemo(() => {
-    let filtered = paymentHistory;
+    try {
+      if (!Array.isArray(paymentHistory)) {
+        console.warn('PaymentHistory: paymentHistory is not an array:', paymentHistory);
+        return [];
+      }
 
-    if (statusFilter !== 'all') {
-      filtered = filtered.filter(item => {
-        if (statusFilter === 'paid') return item._rawTransaction?.paid_at;
-        if (statusFilter === 'scheduled') return item._rawTransaction?.payment_status === 'scheduled';
-        if (statusFilter === 'ready') return item.status === 'approved' && !item._rawTransaction?.paid_at;
-        return true;
+      let filtered = paymentHistory;
+
+      if (statusFilter !== 'all') {
+        filtered = filtered.filter(item => {
+          if (!item) return false;
+          
+          try {
+            if (statusFilter === 'paid') return item.status === 'paid';
+            if (statusFilter === 'scheduled') return item.status === 'scheduled';
+            if (statusFilter === 'ready') return item.status === 'ready';
+            return true;
+          } catch (error) {
+            console.error('Error filtering item by status:', error, item);
+            return false;
+          }
+        });
+      }
+
+      if (achFilter !== 'all') {
+        filtered = filtered.filter(item => {
+          if (!item) return false;
+          
+          try {
+            if (achFilter === 'ach') return item.auto_ach === true;
+            if (achFilter === 'manual') return item.auto_ach === false || item.auto_ach === null;
+            return true;
+          } catch (error) {
+            console.error('Error filtering item by ACH:', error, item);
+            return false;
+          }
+        });
+      }
+
+      console.log('PaymentHistory filter applied:', {
+        statusFilter,
+        achFilter,
+        totalItems: paymentHistory.length,
+        filteredItems: filtered.length
       });
-    }
 
-    if (achFilter !== 'all') {
-      filtered = filtered.filter(item => {
-        if (achFilter === 'ach') return item._rawTransaction?.payment_method === 'ach';
-        if (achFilter === 'manual') return item._rawTransaction?.payment_method === 'manual' || !item._rawTransaction?.payment_method;
-        return true;
-      });
+      return filtered;
+    } catch (error) {
+      console.error('Error in PaymentHistory filtering:', error);
+      return [];
     }
-
-    return filtered;
   }, [paymentHistory, statusFilter, achFilter]);
 
   const formatCurrency = (amount) => {
@@ -253,7 +284,6 @@ export default function PaymentHistory() {
     const isPaid = !!item._rawTransaction?.paid_at;
     const payoutId = item._rawTransaction?.payout_id || item.id;
     const isProcessing = processingActions.has(payoutId);
-    const isApproved = item.status === 'approved';
 
     if (isPaid) return []; // No actions for completed payments
     
@@ -266,21 +296,11 @@ export default function PaymentHistory() {
         className: 'bg-green-600 hover:bg-green-700 text-white'
       });
       
-      // Disable Process ACH for approved payments - they shouldn't be processed again
-      if (item.auto_ach && !isApproved) {
+      if (item.auto_ach) {
         actions.push({ 
           label: 'Process ACH', 
           handler: () => handleProcessACH(item),
           className: 'bg-blue-600 hover:bg-blue-700 text-white'
-        });
-      } else if (item.auto_ach && isApproved) {
-        // Show disabled button for approved payments with explanation
-        actions.push({ 
-          label: 'Process ACH', 
-          handler: () => {},
-          className: 'bg-gray-400 text-gray-600 cursor-not-allowed',
-          disabled: true,
-          tooltip: 'Cannot process approved payments'
         });
       }
     }
@@ -318,26 +338,6 @@ export default function PaymentHistory() {
     );
   }
 
-  if (filteredHistoryData.length === 0) {
-    return (
-      <div className="rounded-xl border border-charney-light-gray bg-white p-8 shadow-sm dark:border-charney-gray/70 dark:bg-charney-charcoal/50">
-        <div className="text-center">
-          <div className="mx-auto h-12 w-12 rounded-full bg-charney-cream flex items-center justify-center mb-4">
-            <svg className="h-6 w-6 text-charney-gray" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-          </div>
-          <h3 className="text-lg font-semibold text-charney-black dark:text-charney-white mb-2">
-            No Payment History
-          </h3>
-          <p className="text-sm text-charney-gray">
-            No payments match your current filter criteria.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="card p-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
@@ -350,7 +350,7 @@ export default function PaymentHistory() {
           </p>
         </div>
 
-        {/* Filters */}
+        {/* Filters - Always show so user can change filter even when no results */}
         <div className="flex gap-3">
           <select
             value={statusFilter}
@@ -375,95 +375,114 @@ export default function PaymentHistory() {
         </div>
       </div>
 
-      <div className="overflow-x-auto" role="region" aria-label="Payment history">
-        <table className="w-full text-left text-sm">
-          <thead className="text-xs uppercase">
-            <tr>
-              <th className="p-4">Agent</th>
-              <th className="p-4">Property</th>
-              <th className="p-4 text-center">Amount</th>
-              <th className="p-4">Payout Date</th>
-              <th className="p-4 text-center">Status</th>
-              <th className="p-4 text-center">Method</th>
-              <th className="p-4">Reference</th>
-              <th className="p-4 text-center">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredHistoryData.map((item) => (
-              <tr
-                key={item.id}
-                className="cursor-pointer hover:bg-charney-cream/50 dark:hover:bg-charney-cream/10"
-              >
-                <td className="p-4 font-bold">
-                  {item.broker}
-                </td>
-                <td className="p-4 text-charney-gray">
-                  {item.propertyAddress}
-                </td>
-                <td className="p-4 text-center text-charney-gray">
-                  {formatCurrency(item.salePrice * (item.grossCommissionRate / 100))}
-                </td>
-                <td className="p-4 text-charney-gray">
-                  {formatDate(item._rawTransaction?.paid_at || item._rawTransaction?.scheduled_payout_date)}
-                </td>
-                <td className="p-4 text-center">
-                  {getStatusBadge(item._rawTransaction?.payment_status || (item._rawTransaction?.paid_at ? 'paid' : 'ready'))}
-                </td>
-                <td className="p-4 text-center">
-                  {getAchBadge(item._rawTransaction?.payment_method)}
-                </td>
-                <td className="p-4 text-charney-gray font-mono">
-                  {item._rawTransaction?.ach_reference || item._rawTransaction?.payment_batch_id || item.id}
-                </td>
-                <td className="p-4">
-                  <div className="flex gap-2">
-                    {getAvailableActions(item).map((action, index) => (
-                      <button
-                        key={index}
-                        onClick={action.handler}
-                        disabled={action.disabled}
-                        className={`px-3 py-1 text-xs font-bold uppercase rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${action.className}`}
-                      >
-                        {action.disabled ? 'Processing...' : action.label}
-                      </button>
-                    ))}
-                    {getAvailableActions(item).length === 0 && (
-                      <span className="text-xs text-charney-gray italic">No actions</span>
-                    )}
-                  </div>
-                </td>
+      {/* Content: Show either data table or empty state */}
+      {filteredHistoryData.length === 0 ? (
+        <div className="rounded-xl border border-charney-light-gray bg-white p-8 shadow-sm dark:border-charney-gray/70 dark:bg-charney-charcoal/50">
+          <div className="text-center">
+            <div className="mx-auto h-12 w-12 rounded-full bg-charney-cream flex items-center justify-center mb-4">
+              <svg className="h-6 w-6 text-charney-gray" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-semibold text-charney-black dark:text-charney-white mb-2">
+              No Payment History
+            </h3>
+            <p className="text-sm text-charney-gray">
+              No payments match your current filter criteria. Try selecting "All Status" to see all payments.
+            </p>
+          </div>
+        </div>
+      ) : (
+        <div className="overflow-x-auto" role="region" aria-label="Payment history">
+          <table className="w-full text-left text-sm">
+            <thead className="text-xs uppercase">
+              <tr>
+                <th className="p-4">Agent</th>
+                <th className="p-4">Property</th>
+                <th className="p-4 text-center">Amount</th>
+                <th className="p-4">Payout Date</th>
+                <th className="p-4 text-center">Status</th>
+                <th className="p-4 text-center">Method</th>
+                <th className="p-4">Reference</th>
+                <th className="p-4 text-center">Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Summary Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-charney-cream/30 dark:bg-charney-slate/30 rounded-lg p-4">
-          <p className="text-sm font-medium text-charney-gray">Total Paid</p>
-          <p className="text-xl font-bold text-charney-black dark:text-charney-white">
-            {formatCurrency(
-              filteredHistoryData
-                .filter(item => item._rawTransaction?.paid_at)
-                .reduce((sum, item) => sum + (item.salePrice * (item.grossCommissionRate / 100)), 0)
-            )}
-          </p>
+            </thead>
+            <tbody>
+              {filteredHistoryData.map((item) => (
+                <tr
+                  key={item.id}
+                  className="cursor-pointer hover:bg-charney-cream/50 dark:hover:bg-charney-cream/10"
+                >
+                  <td className="p-4 font-bold">
+                    {item.broker}
+                  </td>
+                  <td className="p-4 text-charney-gray">
+                    {item.propertyAddress}
+                  </td>
+                  <td className="p-4 text-center text-charney-gray">
+                    {formatCurrency(item.payout_amount || 0)}
+                  </td>
+                  <td className="p-4 text-charney-gray">
+                    {formatDate(item.paid_at || item.scheduled_at)}
+                  </td>
+                  <td className="p-4 text-center">
+                    {getStatusBadge(item.status)}
+                  </td>
+                  <td className="p-4 text-center">
+                    {getAchBadge(item.auto_ach ? 'ach' : 'manual')}
+                  </td>
+                  <td className="p-4 text-charney-gray font-mono">
+                    {item.ach_reference || item.batch_id || item.id}
+                  </td>
+                  <td className="p-4">
+                    <div className="flex gap-2">
+                      {getAvailableActions(item).map((action, index) => (
+                        <button
+                          key={index}
+                          onClick={action.handler}
+                          disabled={action.disabled}
+                          className={`px-3 py-1 text-xs font-bold uppercase rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${action.className}`}
+                        >
+                          {action.disabled ? 'Processing...' : action.label}
+                        </button>
+                      ))}
+                      {getAvailableActions(item).length === 0 && (
+                        <span className="text-xs text-charney-gray italic">No actions</span>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          
+          {/* Summary Stats - Only show when there are results */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
+            <div className="bg-charney-cream/30 dark:bg-charney-slate/30 rounded-lg p-4">
+              <p className="text-sm font-medium text-charney-gray">Total Paid</p>
+              <p className="text-xl font-bold text-charney-black dark:text-charney-white">
+                {formatCurrency(
+                  filteredHistoryData
+                    .filter(item => item.status === 'paid')
+                    .reduce((sum, item) => sum + (item.payout_amount || 0), 0)
+                )}
+              </p>
+            </div>
+            <div className="bg-charney-cream/30 dark:bg-charney-slate/30 rounded-lg p-4">
+              <p className="text-sm font-medium text-charney-gray">ACH Payments</p>
+              <p className="text-xl font-bold text-charney-black dark:text-charney-white">
+                {filteredHistoryData.filter(item => item.auto_ach === true).length}
+              </p>
+            </div>
+            <div className="bg-charney-cream/30 dark:bg-charney-slate/30 rounded-lg p-4">
+              <p className="text-sm font-medium text-charney-gray">Manual Payments</p>
+              <p className="text-xl font-bold text-charney-black dark:text-charney-white">
+                {filteredHistoryData.filter(item => item.auto_ach === false || item.auto_ach === null).length}
+              </p>
+            </div>
+          </div>
         </div>
-        <div className="bg-charney-cream/30 dark:bg-charney-slate/30 rounded-lg p-4">
-          <p className="text-sm font-medium text-charney-gray">ACH Payments</p>
-          <p className="text-xl font-bold text-charney-black dark:text-charney-white">
-            {filteredHistoryData.filter(item => item._rawTransaction?.payment_method === 'ach').length}
-          </p>
-        </div>
-        <div className="bg-charney-cream/30 dark:bg-charney-slate/30 rounded-lg p-4">
-          <p className="text-sm font-medium text-charney-gray">Manual Payments</p>
-          <p className="text-xl font-bold text-charney-black dark:text-charney-white">
-            {filteredHistoryData.filter(item => item._rawTransaction?.payment_method === 'manual' || !item._rawTransaction?.payment_method).length}
-          </p>
-        </div>
-      </div>
+      )}
     </div>
   );
 }
