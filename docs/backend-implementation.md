@@ -163,24 +163,17 @@ const subscribeToTransactionUpdates = () => {
    - [x] Test transaction creation uses `create-test-transaction.js` function
    - [x] Server-side data validation and audit trail creation
 
-#### **Stage 2.9: Approved Transaction Process Button Control**
-- [X] **Disable process button for approved transactions**: Updated CoordinatorQueueTable to show disabled "Approved" button instead of "Process" for approved transactions
-- [ ] **TODO: Revisit audit behavior for approved transactions**: Need to determine proper workflow for viewing/auditing already-approved transactions with generated payments
+#### **Stage 2.9: Approved Transaction Process Button Control (UNDONE)**
+- [~] **Process button control**: Re-enabled process buttons for all transactions to allow verification testing
+- [ ] **TODO: Revisit audit behavior for approved transactions**: Will be addressed in future iteration after testing is complete
 
-**Rationale**: Approved transactions already have generated payments and should not be edited through the PDF audit flow. The process button now clearly indicates when a transaction cannot be modified, preventing data integrity issues.
+**Status**: Temporarily reverted to allow full testing of approval workflow and UI display verification.
 
-#### **Stage 2.10: Test Data and Calculation Precision Fixes**
-- [X] **Fixed agent ID null issue**: Enhanced agent lookup in create-test-transaction with better error handling and debugging
-- [X] **Fixed amount mismatch**: Updated transformTransactionsForUI to calculate and display actual agent payout amounts instead of total commission
-- [X] **Fixed payout precision**: Added ROUND(amount, 2) to RPC function to prevent floating point precision errors
-- [ ] **Debug sale price modification**: Added debugging to PDF audit form initialization to identify source of unexpected sale price changes
-- [ ] **Investigate form data source**: Need to determine why PDF audit form is using different values than original transaction data
+**Test Files Created**:
+- `test-commission-math.js` - Complete test suite (run `testCommissionMath.runAll()` in browser console)
+- `quick-math-test.js` - Simple verification test for rapid testing
 
-**Current Issues**:
-- Sale price changing from $1,000,000 to $2,999,966 during approval (under investigation)
-- Agent lookup may be failing due to empty agents table or permissions (enhanced debugging added)
-
-**Expected Behavior**: Test transactions should maintain original sale price values and use real agent IDs for accurate payout calculations.
+**Expected Behavior**: All commission calculations should be mathematically accurate within 1 cent tolerance, regardless of approval workflow (automated vs manual).
 
 ### Phase 1B – Manual Verification Flow (See `docs/parse-pdf-user-journey.md#path-b` & Track A checklist items 4–6)
 - **Verification modal** reads from `commission_evidences`
@@ -203,6 +196,22 @@ const subscribeToTransactionUpdates = () => {
    - [x] Replace direct Supabase calls with `approve-transaction.js` function
    - [x] Add proper form validation and data type conversion
    - [x] Implement JWT authentication for secure server-side updates
+
+#### **Stage 2.10: Test Data and Calculation Precision Fixes**
+- [X] **Fixed agent ID null issue**: Enhanced agent lookup in create-test-transaction with better error handling and debugging
+- [X] **Fixed amount mismatch**: Updated transformTransactionsForUI to calculate and display actual agent payout amounts instead of total commission
+- [X] **Fixed payout precision**: Added ROUND(amount, 2) to RPC function to prevent floating point precision errors
+- [X] **Enhanced create-test-transaction**: Added support for custom sale_price, commission_rate, and agent_split parameters
+- [X] **Created comprehensive math test suite**: test-commission-math.js for verifying calculations across all workflows
+- [ ] **Debug sale price modification**: Added debugging to PDF audit form initialization to identify source of unexpected sale price changes
+- [ ] **Investigate form data source**: Need to determine why PDF audit form is using different values than original transaction data
+
+#### **Stage 2.11: Math Verification Test Suite**
+- [X] **Automated approval test**: Tests 10 different scenarios with various sale prices, commission rates, and agent splits
+- [X] **Manual approval test**: Creates transactions, edits values through PDF audit modal, and verifies final calculations
+- [X] **Quick math test**: Simple test for rapid validation of core calculation accuracy
+- [ ] **Run comprehensive test suite**: Execute full test battery to verify all math is correct
+
 ### **Stage 2: Payments Tab Backend Integration**  
 **Scope:** Wire Payments tab components with complete payment workflow functionality
 

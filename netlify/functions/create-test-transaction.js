@@ -18,7 +18,14 @@ export async function handler(event, context) {
   console.log('🔄 CREATE-TEST-TRANSACTION FUNCTION TRIGGERED');
   
   try {
-    const { test_type } = JSON.parse(event.body);
+    const requestBody = JSON.parse(event.body);
+    const { 
+      test_type, 
+      sale_price, 
+      commission_rate, 
+      agent_split 
+    } = requestBody;
+    
     const authHeader = event.headers.authorization;
     const jwt = authHeader?.split(' ')[1];
 
@@ -64,11 +71,11 @@ export async function handler(event, context) {
     
     const transactionData = {
       property_address: `${randomId} Test Street, Demo City, ST 12345`,
-      final_sale_price: test_type === 'phase1a' ? 750000 : 1000000,
+      final_sale_price: sale_price || (test_type === 'phase1a' ? 750000 : 1000000),
       final_broker_agent_name: testAgentName,
-      final_listing_commission_percent: 4.2,
+      final_listing_commission_percent: commission_rate || 4.2,
       final_buyer_commission_percent: 2.5,
-      final_agent_split_percent: 75,
+      final_agent_split_percent: agent_split || 75,
       status: test_type === 'phase1a' ? 'approved' : 'in_queue',
       intake_status: test_type === 'phase1a' ? 'completed' : 'in_review',
       agent_id: testAgentId,
