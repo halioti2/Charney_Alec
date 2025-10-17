@@ -207,7 +207,7 @@ const subscribeToPayoutUpdates = () => {
 
 #### **Stage 2.2: Auto-Payout Integration with Approval Flows**
 - [X] Update `netlify/functions/approve-transaction.js` to call RPC after transaction approval
-- [ ] Add Supabase RPC node to n8n workflow after auto-approval
+- [X] Add Supabase RPC node to n8n workflow after auto-approval
 - [ ] Add error handling for payout creation failures in both flows
 - [ ] Test end-to-end: approval → payout creation → audit trail
 - [ ] Document RPC integration with code comments per strategy
