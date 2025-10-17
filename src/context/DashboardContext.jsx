@@ -11,6 +11,8 @@ import {
   transformTransactionsForUI,
   subscribeToTransactions,
   subscribeToCommissionEvidences,
+  fetchCommissionPayouts,
+  transformPayoutsForUI,
 } from '../lib/supabaseService.js';
 
 const DashboardContext = createContext(undefined);
@@ -111,22 +113,26 @@ export function DashboardProvider({ children, initialState = {} }) {
     setIsRefreshingPayments(true);
     try {
       console.log('Fetching payment data from Supabase...');
-      // For now, reuse transaction data and filter for payment-relevant items
-      const rawTransactions = await fetchTransactions();
-      const transformedTransactions = transformTransactionsForUI(rawTransactions);
       
-      // Filter transactions for payment queue (approved, unpaid)
-      const paymentQueueData = transformedTransactions.filter(
-        t => t.status === 'approved' && !t.paid_at
+      // Fetch commission payouts
+      const rawPayouts = await fetchCommissionPayouts();
+      const transformedPayouts = transformPayoutsForUI(rawPayouts);
+      
+      // Filter for different payment queues
+      const paymentQueueData = transformedPayouts.filter(
+        p => p.status === 'ready' && p.payout_amount > 0
       );
       
-      // Filter for payment history (paid transactions)
-      const paymentHistoryData = transformedTransactions.filter(
-        t => t.paid_at
+      const paymentHistoryData = transformedPayouts.filter(
+        p => p.status === 'paid' || p.status === 'scheduled'
       );
+      
+      console.log('Raw payouts from Supabase:', rawPayouts);
+      console.log('Transformed payouts:', transformedPayouts);
+      console.log('Filtered payment queue data:', paymentQueueData);
+      console.log('Filtered payment history data:', paymentHistoryData);
       
       setPaymentData(paymentQueueData);
-      setPaymentTransactions(transformedTransactions);
       setPaymentHistory(paymentHistoryData);
       
       console.log('Payment queue data:', paymentQueueData);

@@ -199,14 +199,14 @@ const subscribeToPayoutUpdates = () => {
 - [ ] Audit trail for all payment operations through transaction_events
 
 #### **Stage 2.1: Commission Payout RPC Function**
-- [ ] Create `create_commission_payout` RPC function in Supabase
-- [ ] Add function to migration file: `supabase/migrations/[timestamp]_create_commission_payout_rpc.sql`
-- [ ] Test RPC function with sample transaction data
-- [ ] Verify RLS policies allow authenticated users to execute function
-- [ ] Document function parameters and return values
+- [X] Create `create_commission_payout` RPC function in Supabase
+- [X] Add function to migration file: `supabase/migrations/[timestamp]_create_commission_payout_rpc.sql`
+- [X] Test RPC function with sample transaction data
+- [X] Verify RLS policies allow authenticated users to execute function
+- [X] Document function parameters and return values
 
 #### **Stage 2.2: Auto-Payout Integration with Approval Flows**
-- [ ] Update `netlify/functions/approve-transaction.js` to call RPC after transaction approval
+- [X] Update `netlify/functions/approve-transaction.js` to call RPC after transaction approval
 - [ ] Add Supabase RPC node to n8n workflow after auto-approval
 - [ ] Add error handling for payout creation failures in both flows
 - [ ] Test end-to-end: approval → payout creation → audit trail
@@ -220,19 +220,19 @@ const subscribeToPayoutUpdates = () => {
 - [ ] Test each function independently with sample data
 
 #### **Stage 2.4: Frontend Context Integration**
-- [ ] Extend `DashboardContext` with payout-related state (`payouts`, `setPayouts`, `isRefreshingPayouts`)
-- [ ] Create `fetchPayouts()` function in `src/lib/supabaseService.js`
-- [ ] Use the polling data (same hook as Coordinator) to populate the Payments tab
-- [ ] Update `PayoutQueue` component to consume real payout data from `DashboardContext`
-- [ ] Update `PaymentHistory` component to consume real transaction data from `DashboardContext`
-- [ ] Replace mock data imports with `DashboardContext` consumption
+- [X] Extend `DashboardContext` with payout-related state (`payouts`, `setPayouts`, `isRefreshingPayouts`)
+- [X] Create `fetchPayouts()` function in `src/lib/supabaseService.js`
+- [X] Use the polling data (same hook as Coordinator) to populate the Payments tab
+- [X] Update `PayoutQueue` component to consume real payout data from `DashboardContext`
+- [X] Update `PaymentHistory` component to consume real transaction data from `DashboardContext`
+- [X] Replace mock data imports with `DashboardContext` consumption
 
 #### **Stage 2.5: Payment Actions Integration**
 - [ ] Wire "Schedule Payout" button to call `schedule-payout.js` function
 - [ ] Wire "Mark as Paid" button to call `update-payout-status.js` function
 - [ ] Wire "Process ACH" button to call `process-ach-payment.js` function
 - [ ] Trigger `refetchTransactions()` and `refetchPayouts()` after scheduling/approving payouts so totals stay current
-- [ ] Add manual refresh capability for payments tab
+- [X] Add manual refresh capability for payments tab
 - [ ] Surface ACH flags and failure states using real data from Supabase
 
 #### **Stage 2.6: Testing & Validation**

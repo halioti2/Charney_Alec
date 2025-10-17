@@ -108,6 +108,32 @@ export async function handler(event, context) {
 
     if (eventError) throw eventError;
 
+    // 4. For phase1a (approved), create commission payout using RPC function
+    let payoutResult = null;
+    let payoutError = null;
+    
+    if (test_type === 'phase1a') {
+      try {
+        console.log(`🔄 Creating commission payout for approved test transaction ${transaction.id}`);
+        
+        const { data: payout, error: rpcError } = await userSupabase
+          .rpc('create_commission_payout', { 
+            p_transaction_id: transaction.id 
+          });
+
+        if (rpcError) {
+          console.error('⚠️ Test payout creation failed:', rpcError.message);
+          payoutError = rpcError.message;
+        } else {
+          payoutResult = payout?.[0] || null;
+          console.log(`✅ Test commission payout created:`, payoutResult);
+        }
+      } catch (rpcErr) {
+        console.error('⚠️ Test payout creation exception:', rpcErr.message);
+        payoutError = rpcErr.message;
+      }
+    }
+
     console.log(`✅ Test transaction created: ${transaction.id} (${test_type})`);
 
     return { 
@@ -117,8 +143,14 @@ export async function handler(event, context) {
         success: true,
         transaction,
         evidence,
+        payout: payoutResult,
+        payout_error: payoutError,
         test_type,
-        message: `${test_type.toUpperCase()} test transaction created successfully`
+        message: test_type === 'phase1a' 
+          ? (payoutError 
+            ? `${test_type.toUpperCase()} test transaction created, but payout creation failed`
+            : `${test_type.toUpperCase()} test transaction and payout created successfully`)
+          : `${test_type.toUpperCase()} test transaction created successfully`
       })
     };
 

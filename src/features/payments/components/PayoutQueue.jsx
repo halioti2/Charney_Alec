@@ -14,6 +14,10 @@ export default function PayoutQueue() {
     refetchPaymentData 
   } = useDashboardContext();
 
+  // Debug: Log payment data whenever it changes
+  console.log('PayoutQueue received paymentData:', paymentData);
+  console.log('PayoutQueue paymentData length:', paymentData?.length || 0);
+
   // Handle refresh manually when needed
   const handleRefresh = async () => {
     try {
@@ -34,7 +38,7 @@ export default function PayoutQueue() {
   const totalPayout = useMemo(() =>
     paymentData
       .filter(item => selectedItems.has(item.id))
-      .reduce((sum, item) => sum + (item.salePrice * (item.grossCommissionRate / 100)), 0),
+      .reduce((sum, item) => sum + (item.payout_amount || 0), 0),
     [selectedItems, paymentData]
   );
 
@@ -76,7 +80,7 @@ export default function PayoutQueue() {
 
     // Additional validation: check for valid amounts
     const selectedItemsData = paymentData.filter(item => selectedItems.has(item.id));
-    const invalidItems = selectedItemsData.filter(item => (item.salePrice * (item.grossCommissionRate / 100)) <= 0);
+    const invalidItems = selectedItemsData.filter(item => (item.payout_amount || 0) <= 0);
 
     if (invalidItems.length > 0) {
       pushToast({

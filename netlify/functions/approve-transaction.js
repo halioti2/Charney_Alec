@@ -82,6 +82,30 @@ export async function handler(event, context) {
 
     if (eventError) throw eventError;
 
+    // 3. Create commission payout using RPC function
+    let payoutResult = null;
+    let payoutError = null;
+    
+    try {
+      console.log(`🔄 Creating commission payout for transaction ${transaction_id}`);
+      
+      const { data: payout, error: rpcError } = await userSupabase
+        .rpc('create_commission_payout', { 
+          p_transaction_id: transaction_id 
+        });
+
+      if (rpcError) {
+        console.error('⚠️ Payout creation failed:', rpcError.message);
+        payoutError = rpcError.message;
+      } else {
+        payoutResult = payout?.[0] || null;
+        console.log(`✅ Commission payout created:`, payoutResult);
+      }
+    } catch (rpcErr) {
+      console.error('⚠️ Payout creation exception:', rpcErr.message);
+      payoutError = rpcErr.message;
+    }
+
     console.log(`✅ Transaction ${transaction_id} approved successfully`);
 
     return { 
@@ -90,7 +114,11 @@ export async function handler(event, context) {
       body: JSON.stringify({
         success: true,
         transaction: updatedTransaction,
-        message: 'Transaction approved successfully'
+        payout: payoutResult,
+        payout_error: payoutError,
+        message: payoutError 
+          ? 'Transaction approved successfully, but payout creation failed'
+          : 'Transaction approved and payout created successfully'
       })
     };
 

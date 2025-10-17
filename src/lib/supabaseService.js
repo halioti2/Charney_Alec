@@ -186,3 +186,76 @@ function getUIStatus(transaction) {
   
   return 'Awaiting Info';
 }
+
+/**
+ * Fetch all commission payouts with related transaction and agent data
+ * @returns {Promise<Array>} Array of commission payouts with related data
+ */
+export async function fetchCommissionPayouts() {
+  try {
+    const { data: payouts, error } = await supabase
+      .from('commission_payouts')
+      .select(`
+        *,
+        transactions!commission_payouts_transaction_id_fkey (
+          id,
+          property_address,
+          final_sale_price,
+          created_at
+        ),
+        agents (
+          id,
+          full_name,
+          email
+        )
+      `)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching commission payouts:', error);
+      throw error;
+    }
+
+    return payouts || [];
+  } catch (error) {
+    console.error('Failed to fetch commission payouts:', error);
+    return [];
+  }
+}
+
+/**
+ * Transform commission payouts for UI display
+ * @param {Array} payouts - Raw payout data from Supabase
+ * @returns {Array} Transformed payout data for UI components
+ */
+export function transformPayoutsForUI(payouts) {
+  if (!Array.isArray(payouts)) return [];
+
+  return payouts.map(payout => {
+    const transaction = payout.transactions;
+    const agent = payout.agents;
+
+    return {
+      id: payout.id,
+      transaction_id: payout.transaction_id,
+      agent_id: payout.agent_id,
+      payout_amount: payout.payout_amount,
+      status: payout.status,
+      auto_ach: payout.auto_ach,
+      batch_id: payout.batch_id,
+      ach_provider: payout.ach_provider,
+      ach_reference: payout.ach_reference,
+      scheduled_at: payout.scheduled_at,
+      paid_at: payout.paid_at,
+      failure_reason: payout.failure_reason,
+      created_at: payout.created_at,
+      // Related data
+      property_address: transaction?.property_address,
+      final_sale_price: transaction?.final_sale_price,
+      agent_name: agent?.full_name,
+      agent_email: agent?.email,
+      // Keep raw data for advanced operations
+      _rawPayout: payout,
+    };
+  });
+}

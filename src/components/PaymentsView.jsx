@@ -4,8 +4,10 @@ import {
   PayoutFailureBanner,
   RequiresAttentionQueue
 } from '../features/payments/components';
+import { useDashboardContext } from '../context/DashboardContext.jsx';
 
 export default function PaymentsView({ hidden }) {
+  const { refetchPaymentData, isRefreshingPayments } = useDashboardContext();
   // Mock failure data for demonstration - Realistic brokerage scenarios
   const mockFailures = [
     {
@@ -45,12 +47,23 @@ export default function PaymentsView({ hidden }) {
       aria-labelledby="payments-view-title"
     >
       <header>
-        <h2 id="payments-view-title" className="text-2xl font-black uppercase tracking-tight">
-          Payments
-        </h2>
-        <p className="text-sm text-charney-gray">
-          Manage agent payouts and payment history
-        </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 id="payments-view-title" className="text-2xl font-black uppercase tracking-tight">
+              Payments
+            </h2>
+            <p className="text-sm text-charney-gray">
+              Manage agent payouts and payment history
+            </p>
+          </div>
+          <button
+            onClick={() => refetchPaymentData()}
+            disabled={isRefreshingPayments}
+            className="bg-charney-red text-white px-4 py-2 text-sm font-bold uppercase hover:bg-charney-black transition-colors disabled:opacity-50"
+          >
+            {isRefreshingPayments ? 'Refreshing...' : 'Refresh Payments'}
+          </button>
+        </div>
       </header>
 
       {/* Failure Banner */}
