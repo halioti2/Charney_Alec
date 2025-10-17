@@ -212,6 +212,78 @@ const subscribeToTransactionUpdates = () => {
 - [X] **Quick math test**: Simple test for rapid validation of core calculation accuracy
 - [ ] **Run comprehensive test suite**: Execute full test battery to verify all math is correct
 
+#### **Stage 2.12: Commission Components Integration to PDF Audit (COMPLETED)**
+**Scope:** Extract commission breakdown and plan defaults sections from CommissionModal and integrate them into the PDF audit view
+
+**Goals:** ✅ COMPLETED
+- [X] Add commission breakdown visualization to PDF audit view using existing CommissionCalculationForm component
+- [X] Add plan defaults section to show agent split, cap remaining, and standard fees in PDF audit context
+- [X] Ensure components work with DashboardContext data and PDF audit form data
+- [X] Maintain separation between coordinator tab (PDF audit) and other dashboard tabs
+- [X] Provide real-time commission calculation as coordinator edits values in PDF audit form
+
+**Implementation Summary:**
+- **Created `PdfAuditCommissionDisplay.jsx`**: New component specifically for PDF audit context that shows:
+  - Deal Inputs summary (sale price, commission %, agent split %)
+  - Commission Breakdown (GCI, fees, deductions, net payout)
+  - Plan Defaults (agent/brokerage splits, cap remaining, standard fees)
+- **Enhanced `PdfAuditCard.jsx`**: Added commission display section and agent split % input field
+- **Used existing logic**: Leverages `calculateCommission` from `dashboardData.js` and `agentPlans` from `DashboardContext`
+- **Real-time updates**: Component recalculates automatically as form values change
+
+**Files Modified:**
+- ✅ `src/components/PdfAuditCommissionDisplay.jsx` - New component for PDF audit commission display
+- ✅ `src/components/PdfAuditCard.jsx` - Added commission sections and agent split input
+- ✅ `test-pdf-audit-commissions.js` - Test file for manual validation
+- ✅ `docs/backend-implementation.md` - Documentation updated
+
+**Integration Details:**
+```javascript
+// PDF Audit commission component usage:
+<PdfAuditCommissionDisplay formData={formData} />
+
+// Automatic calculation based on:
+// - formData.final_sale_price
+// - formData.final_listing_commission_percent  
+// - formData.final_agent_split_percent
+// - DashboardContext.agentPlans[formData.final_broker_agent_name]
+```
+
+**Testing:**
+- ✅ Components compile without errors
+- ✅ Development server starts successfully
+- ✅ Real-time calculation logic implemented
+- [ ] Manual testing in browser (coordinator opens PDF audit, enters values, verifies calculations)
+
+**Result:** PDF audit view now shows complete commission breakdown and plan defaults, matching the commission modal functionality while maintaining tab separation.
+
+#### **Stage 2.12.1: PDF Audit Layout Optimization (COMPLETED)**
+**Scope:** Optimize PDF audit layout by repositioning commission components and temporarily disabling PDF preview
+
+**Changes Made:**
+- [X] **Commented out DealSheetViewer**: Temporarily disabled PDF document preview component while keeping it for future re-enablement
+- [X] **Moved commission display to left panel**: Relocated `PdfAuditCommissionDisplay` from right panel to left panel for better visual prominence
+- [X] **Maintained two-panel layout**: Preserved grid structure with commission breakdown on left, form/checklist on right
+- [X] **Enhanced user focus**: Commission calculations now more prominent during audit process
+
+**Layout Structure:**
+```
+Left Panel:                    Right Panel:
+- Commission Breakdown         - Verification Form
+  - Deal Inputs               - Confidence Badge
+  - Commission Calculation    - Document Checklist  
+  - Plan Defaults             - Submit Button
+```
+
+**Files Modified:**
+- ✅ `src/components/PdfAuditCard.jsx` - Commented out DealSheetViewer, moved commission display to left panel, moved confidence badge to right panel
+- ✅ `docs/backend-implementation.md` - Documented layout changes
+
+**Future Considerations:**
+- PDF preview can be re-enabled by uncommenting `<DealSheetViewer />` when document viewing is needed
+- Commission components can be moved back to right panel if layout preferences change
+- Two-panel structure remains flexible for future adjustments
+
 ### **Stage 2: Payments Tab Backend Integration**  
 **Scope:** Wire Payments tab components with complete payment workflow functionality
 

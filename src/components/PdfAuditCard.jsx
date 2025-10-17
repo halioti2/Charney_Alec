@@ -4,6 +4,7 @@ import { fetchTransactionForVerification } from '../lib/supabaseService.js';
 import { supabase } from '../lib/supabaseClient.js';
 import DealSheetViewer from '../components/DealSheetViewer.jsx';
 import ConfidenceBadge from '../components/ConfidenceBadge.jsx';
+import PdfAuditCommissionDisplay from '../components/PdfAuditCommissionDisplay.jsx';
 
 const checklistItemsConfig = ["Contract of Sale", "Invoice", "Disclosure Forms"];
 
@@ -203,13 +204,18 @@ const PdfAuditCard = () => {
             
             <div className="grid gap-8 lg:grid-cols-2">
               <div className="space-y-8">
-                <DealSheetViewer />
-                <ConfidenceBadge confidence={confidence} />
+                {/* TODO: Re-enable PDF viewer when needed */}
+                {/* <DealSheetViewer /> */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold dark:text-charney-white">Commission Breakdown</h3>
+                  <PdfAuditCommissionDisplay formData={formData} />
+                </div>
               </div>
 
               <div className="space-y-8 dark:text-charney-white">
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold">Verification Form</h3>
+                  <ConfidenceBadge confidence={confidence} />
                   
                   <div>
                     <label className="block text-sm font-medium mb-1">Broker/Agent Name</label>
@@ -272,6 +278,19 @@ const PdfAuditCard = () => {
                         placeholder="2.5"
                       />
                     </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Agent Split %</label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      name="final_agent_split_percent"
+                      value={formData.final_agent_split_percent}
+                      onChange={handleFormChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-charney-red dark:bg-charney-charcoal dark:border-charney-gray dark:text-charney-white"
+                      placeholder="70.0"
+                    />
                   </div>
                 </div>
 
