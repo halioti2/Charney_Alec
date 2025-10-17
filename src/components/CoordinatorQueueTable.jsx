@@ -21,7 +21,8 @@ const CoordinatorQueueTable = () => {
     () =>
       transactions.map((transaction) => ({
         ...transaction,
-        totalCommission: transaction.salePrice * (transaction.grossCommissionRate / 100),
+        // Use the pre-calculated agent payout amount that matches RPC calculation
+        displayAmount: transaction.agentPayout || 0,
         statusClass: statusColors[transaction.status] ?? 'bg-gray-100 text-gray-800',
       })),
     [transactions],
@@ -58,7 +59,7 @@ const CoordinatorQueueTable = () => {
             <tr>
               <th className="p-4">Agent</th>
               <th className="p-4">Property</th>
-              <th className="p-4">Total Commission</th>
+              <th className="p-4">Agent Payout</th>
               <th className="p-4">Status</th>
               <th className="p-4">Action</th>
             </tr>
@@ -71,7 +72,7 @@ const CoordinatorQueueTable = () => {
               >
                 <td className="p-4">{transaction.broker}</td>
                 <td className="p-4">{transaction.propertyAddress}</td>
-                <td className="p-4">{formatCurrency(transaction.totalCommission)}</td>
+                <td className="p-4">{formatCurrency(transaction.displayAmount)}</td>
                 <td className="p-4">
                   <span className={`rounded-full px-2 py-1 text-xs ${transaction.statusClass}`}>
                     {transaction.status}

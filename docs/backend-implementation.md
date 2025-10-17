@@ -16,6 +16,47 @@ This document captures the decisions, rationale, and phased checklist for wiring
    - Extend `DashboardContext` (similar to the prior `AuthContext` pattern) to own data fetching, manual refresh, and (later) realtime wiring.  
    - Frontend components consume data from context; no tab should call Supabase directly.
    - **All database writes must go through secure Netlify functions** to maintain proper authentication and data validation.
+   - **All database reads use direct Supabase client** for optimal performance and real-time capabilities.
+
+## **Hybrid Architecture Implementation (Stage 2.8)**
+
+### **Client-Side (Direct Supabase)**
+**Use for**: Read operations, real-time subscriptions, UI data fetching
+```javascript
+// ✅ GOOD: Direct reads for fast UI updates
+const { data } = await supabase.from('commission_payouts').select('*');
+
+// ✅ GOOD: Real-time subscriptions for live updates  
+supabase.from('transactions').on('UPDATE', handleUpdate).subscribe();
+```
+
+### **Server-Side (Netlify Functions)**
+**Use for**: Write operations, business logic, secure operations
+```javascript
+// ✅ GOOD: Writes via Netlify functions for security
+const response = await fetch('/.netlify/functions/schedule-payout', {
+  method: 'POST',
+  body: JSON.stringify({ payout_ids: [id1, id2] })
+});
+```
+
+### **DashboardContext Integration**
+```javascript
+// Direct Supabase reads (fast)
+const refetchPaymentData = async () => {
+  const rawPayouts = await fetchCommissionPayouts(); // Direct Supabase
+  setPaymentData(transformPayoutsForUI(rawPayouts));
+};
+
+// Netlify function writes (secure)
+const schedulePayouts = async (payoutIds) => {
+  const response = await fetch('/.netlify/functions/schedule-payout', {
+    method: 'POST',
+    body: JSON.stringify({ payout_ids: payoutIds })
+  });
+  await refetchPaymentData(); // Refresh after write
+};
+```
 
 3. **Phased Rollout by Tab (Updated Scope)**
    - **Stage 1: Coordinator Tab Only** - Wire coordinator queue, verification modal, and PDF workflow
@@ -121,6 +162,25 @@ const subscribeToTransactionUpdates = () => {
 4. **Netlify Function Integration**
    - [x] Test transaction creation uses `create-test-transaction.js` function
    - [x] Server-side data validation and audit trail creation
+
+#### **Stage 2.9: Approved Transaction Process Button Control**
+- [X] **Disable process button for approved transactions**: Updated CoordinatorQueueTable to show disabled "Approved" button instead of "Process" for approved transactions
+- [ ] **TODO: Revisit audit behavior for approved transactions**: Need to determine proper workflow for viewing/auditing already-approved transactions with generated payments
+
+**Rationale**: Approved transactions already have generated payments and should not be edited through the PDF audit flow. The process button now clearly indicates when a transaction cannot be modified, preventing data integrity issues.
+
+#### **Stage 2.10: Test Data and Calculation Precision Fixes**
+- [X] **Fixed agent ID null issue**: Enhanced agent lookup in create-test-transaction with better error handling and debugging
+- [X] **Fixed amount mismatch**: Updated transformTransactionsForUI to calculate and display actual agent payout amounts instead of total commission
+- [X] **Fixed payout precision**: Added ROUND(amount, 2) to RPC function to prevent floating point precision errors
+- [ ] **Debug sale price modification**: Added debugging to PDF audit form initialization to identify source of unexpected sale price changes
+- [ ] **Investigate form data source**: Need to determine why PDF audit form is using different values than original transaction data
+
+**Current Issues**:
+- Sale price changing from $1,000,000 to $2,999,966 during approval (under investigation)
+- Agent lookup may be failing due to empty agents table or permissions (enhanced debugging added)
+
+**Expected Behavior**: Test transactions should maintain original sale price values and use real agent IDs for accurate payout calculations.
 
 ### Phase 1B – Manual Verification Flow (See `docs/parse-pdf-user-journey.md#path-b` & Track A checklist items 4–6)
 - **Verification modal** reads from `commission_evidences`
@@ -260,6 +320,24 @@ const subscribeToPayoutUpdates = () => {
 - [X] **Verify real-time subscription lifecycle**: Updated subscriptions to refresh both coordinator and payment data on transaction changes
 - [X] **Test cross-tab data consistency**: Enhanced realtime subscriptions to refresh both datasets, added test data migration for validation
 - [X] **Validate data in browser console**: Created comprehensive test script (test-commission-payouts.js) with NaN detection and data validation
+
+**✅ Stage 2.8 Complete - Hybrid Architecture Successfully Implemented**
+
+### **Implementation Summary:**
+1. **Fixed Data Transformation Issues**: Resolved `$NaN` values and missing broker/property data by fixing Supabase query relationships and field mappings
+2. **Implemented Hybrid Model**: Direct Supabase reads for performance, Netlify functions for secure writes
+3. **Enhanced DashboardContext**: Added payment operation handlers (`schedulePayouts`, `processPayment`, `updatePayoutStatus`) that call Netlify functions
+4. **Updated PayoutQueue**: Integrated with hybrid model handlers for secure payment operations
+5. **Created Test Infrastructure**: Comprehensive browser console tests for data validation and debugging
+
+### **Architectural Benefits Achieved:**
+- **Performance**: Read operations are instant (direct Supabase)
+- **Security**: Write operations use service role keys safely on server
+- **Real-time**: Native Supabase subscriptions for live updates
+- **Maintainability**: Clear separation between reads and writes
+- **Scalability**: Server-side functions can be optimized independently
+
+
 
 ### **Stage 3: Broker & Commission Tracker Integration (Future)**
 **Scope:** Complete remaining dashboard tabs after frontend UI is ready

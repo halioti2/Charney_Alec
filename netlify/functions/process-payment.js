@@ -1,3 +1,23 @@
+/**
+ * PROCESS PAYMENT NETLIFY FUNCTION
+ * 
+ * Purpose: Executes commission payments to agents via ACH or manual methods
+ * Integration: Part of Stage 2.3 - Payment Operation Functions
+ * 
+ * Workflow:
+ * 1. Validates user authentication and payout eligibility
+ * 2. Determines payment method (auto ACH vs manual)
+ * 3. Processes payment through appropriate provider
+ * 4. Updates payout status and payment records
+ * 5. Creates audit trail and notifications
+ * 
+ * Payment Methods:
+ * - Auto ACH: Integrated with ACH provider for immediate processing
+ * - Manual: Marks as scheduled for manual processing
+ * 
+ * Security: Server-side validation, protected payout operations, audit logging
+ * Error Handling: Comprehensive error categorization and rollback capabilities
+ */
 import { createClient } from '@supabase/supabase-js';
 
 export async function handler(event, context) {

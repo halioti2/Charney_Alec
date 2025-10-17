@@ -253,6 +253,7 @@ export default function PaymentHistory() {
     const isPaid = !!item._rawTransaction?.paid_at;
     const payoutId = item._rawTransaction?.payout_id || item.id;
     const isProcessing = processingActions.has(payoutId);
+    const isApproved = item.status === 'approved';
 
     if (isPaid) return []; // No actions for completed payments
     
@@ -265,11 +266,21 @@ export default function PaymentHistory() {
         className: 'bg-green-600 hover:bg-green-700 text-white'
       });
       
-      if (item.auto_ach) {
+      // Disable Process ACH for approved payments - they shouldn't be processed again
+      if (item.auto_ach && !isApproved) {
         actions.push({ 
           label: 'Process ACH', 
           handler: () => handleProcessACH(item),
           className: 'bg-blue-600 hover:bg-blue-700 text-white'
+        });
+      } else if (item.auto_ach && isApproved) {
+        // Show disabled button for approved payments with explanation
+        actions.push({ 
+          label: 'Process ACH', 
+          handler: () => {},
+          className: 'bg-gray-400 text-gray-600 cursor-not-allowed',
+          disabled: true,
+          tooltip: 'Cannot process approved payments'
         });
       }
     }

@@ -37,7 +37,7 @@ const PdfAuditCard = () => {
             const extractionData = evidence?.extraction_data || {};
             
             // Initialize form with existing data
-            setFormData({
+            const formInitData = {
               final_broker_agent_name: data.final_broker_agent_name || extractionData.broker_agent_name || "",
               property_address: data.property_address || extractionData.property_address || "",
               final_sale_price: data.final_sale_price || extractionData.sale_price || "",
@@ -46,7 +46,14 @@ const PdfAuditCard = () => {
               final_agent_split_percent: data.final_agent_split_percent || extractionData.agent_split_percent || "",
               final_co_broker_agent_name: data.final_co_broker_agent_name || extractionData.co_broker_agent_name || "",
               final_co_brokerage_firm_name: data.final_co_brokerage_firm_name || extractionData.co_brokerage_firm_name || "",
-            });
+            };
+            
+            console.log('🔍 PDF Audit Form Initialization:');
+            console.log('Transaction data:', data);
+            console.log('Extraction data:', extractionData);
+            console.log('Final form data:', formInitData);
+            
+            setFormData(formInitData);
 
             // Initialize checklist
             const initialChecklist = {};

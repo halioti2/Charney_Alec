@@ -11,7 +11,11 @@ export default function PayoutQueue() {
   const { 
     paymentData, 
     isRefreshingPayments, 
-    refetchPaymentData 
+    refetchPaymentData,
+    // New hybrid model payment handlers
+    schedulePayouts,
+    processPayment,
+    updatePayoutStatus
   } = useDashboardContext();
 
   // Debug: Log payment data whenever it changes
@@ -134,71 +138,31 @@ export default function PayoutQueue() {
     const selectedItemsData = paymentData.filter(item => selectedItems.has(item.id));
 
     try {
-      // Get the auth token from local storage or context (following same pattern as coordinator)
-      const token = localStorage.getItem('supabase.auth.token') || 
-                   JSON.parse(localStorage.getItem('sb-' + process.env.VITE_SUPABASE_URL.split('//')[1].split('.')[0] + '-auth-token'))?.access_token;
+      // Use the hybrid model schedulePayouts function from DashboardContext
+      const selectedIds = selectedItemsData.map(item => item.id);
+      
+      console.log('Scheduling payouts using hybrid model:', {
+        payoutIds: selectedIds,
+        payoutData: payoutData
+      });
 
-      if (!token) {
-        throw new Error('Authentication required');
+      const result = await schedulePayouts(selectedIds);
+
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to schedule payouts');
       }
 
-      // Process each selected payout individually for better error handling
-      const results = [];
-      for (const item of selectedItemsData) {
-        try {
-          const response = await fetch('/.netlify/functions/schedule-payout', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`,
-            },
-            body: JSON.stringify({
-              payout_id: item.id,
-              ach_enabled: payoutData.achEnabled,
-              scheduled_date: new Date().toISOString(), // Schedule for immediate processing
-              notes: `Batch scheduled via payout queue on ${new Date().toLocaleDateString()}`
-            }),
-          });
-
-          const result = await response.json();
-
-          if (!response.ok || !result.success) {
-            throw new Error(result.error || `Failed to schedule payout ${item.id}`);
-          }
-
-          results.push({ success: true, payout_id: item.id, result });
-        } catch (error) {
-          console.error(`Error scheduling payout ${item.id}:`, error);
-          results.push({ success: false, payout_id: item.id, error: error.message });
-        }
-      }
-
-      // Count successful and failed operations
-      const successCount = results.filter(r => r.success).length;
-      const failureCount = results.filter(r => !r.success).length;
-
-      // Refresh payment data regardless of success/failure
-      await refetchPaymentData();
+      // Clear selection and close modal
       setSelectedItems(new Set());
       setShowModal(false);
 
-      // Show appropriate toast message
-      if (successCount > 0 && failureCount === 0) {
-        pushToast({
-          message: `Successfully scheduled ${successCount} payout${successCount !== 1 ? 's' : ''}`,
-          type: "success"
-        });
-      } else if (successCount > 0 && failureCount > 0) {
-        pushToast({
-          message: `Scheduled ${successCount} payout${successCount !== 1 ? 's' : ''}, ${failureCount} failed`,
-          type: "warning"
-        });
-      } else {
-        pushToast({
-          message: `Failed to schedule ${failureCount} payout${failureCount !== 1 ? 's' : ''}`,
-          type: "error"
-        });
-      }
+      // Show success toast
+      pushToast({
+        message: `Successfully scheduled ${selectedIds.length} payout${selectedIds.length !== 1 ? 's' : ''}`,
+        type: "success"
+      });
+
+      console.log('Payouts scheduled successfully:', result.data);
 
     } catch (error) {
       console.error('Error processing payout:', error);

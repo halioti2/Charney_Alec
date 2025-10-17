@@ -144,6 +144,112 @@ export function DashboardProvider({ children, initialState = {} }) {
     }
   }, []);
 
+  // Payment Operation Handlers (Hybrid Model - Call Netlify Functions)
+  const schedulePayouts = useCallback(async (payoutIds) => {
+    try {
+      console.log('Scheduling payouts via Netlify function:', payoutIds);
+      
+      const response = await fetch('/.netlify/functions/schedule-payout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${await window.supabase?.auth?.getSession()?.data?.session?.access_token}`
+        },
+        body: JSON.stringify({
+          payout_ids: payoutIds,
+          auto_process: false // Manual scheduling by default
+        })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to schedule payouts');
+      }
+
+      const result = await response.json();
+      console.log('Payouts scheduled successfully:', result);
+
+      // Refresh payment data to show updated status
+      await refetchPaymentData();
+      
+      return { success: true, data: result };
+    } catch (error) {
+      console.error('Failed to schedule payouts:', error);
+      return { success: false, error: error.message };
+    }
+  }, [refetchPaymentData]);
+
+  const processPayment = useCallback(async (payoutId, paymentMethod = 'ach') => {
+    try {
+      console.log('Processing payment via Netlify function:', { payoutId, paymentMethod });
+      
+      const functionName = paymentMethod === 'ach' ? 'process-ach-payment' : 'process-payment';
+      
+      const response = await fetch(`/.netlify/functions/${functionName}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${await window.supabase?.auth?.getSession()?.data?.session?.access_token}`
+        },
+        body: JSON.stringify({
+          payout_id: payoutId,
+          payment_method: paymentMethod
+        })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to process payment');
+      }
+
+      const result = await response.json();
+      console.log('Payment processed successfully:', result);
+
+      // Refresh payment data to show updated status
+      await refetchPaymentData();
+      
+      return { success: true, data: result };
+    } catch (error) {
+      console.error('Failed to process payment:', error);
+      return { success: false, error: error.message };
+    }
+  }, [refetchPaymentData]);
+
+  const updatePayoutStatus = useCallback(async (payoutId, status, metadata = {}) => {
+    try {
+      console.log('Updating payout status via Netlify function:', { payoutId, status, metadata });
+      
+      const response = await fetch('/.netlify/functions/update-payout-status', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${await window.supabase?.auth?.getSession()?.data?.session?.access_token}`
+        },
+        body: JSON.stringify({
+          payout_id: payoutId,
+          status,
+          metadata
+        })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to update payout status');
+      }
+
+      const result = await response.json();
+      console.log('Payout status updated successfully:', result);
+
+      // Refresh payment data to show updated status
+      await refetchPaymentData();
+      
+      return { success: true, data: result };
+    } catch (error) {
+      console.error('Failed to update payout status:', error);
+      return { success: false, error: error.message };
+    }
+  }, [refetchPaymentData]);
+
   const subscribeToPaymentUpdates = useCallback(() => {
     // Payment updates will come through same transaction subscriptions
     // as payments are part of transaction lifecycle
@@ -272,6 +378,10 @@ export function DashboardProvider({ children, initialState = {} }) {
       isRefreshingPayments,
       refetchPaymentData,
       subscribeToPaymentUpdates,
+      // Payment Operation Handlers (Hybrid Model)
+      schedulePayouts,
+      processPayment,
+      updatePayoutStatus,
     }),
     [
       commissions,
@@ -302,6 +412,10 @@ export function DashboardProvider({ children, initialState = {} }) {
       isRefreshingPayments,
       refetchPaymentData,
       subscribeToPaymentUpdates,
+      // Payment operation handlers
+      schedulePayouts,
+      processPayment,
+      updatePayoutStatus,
     ],
   );
 

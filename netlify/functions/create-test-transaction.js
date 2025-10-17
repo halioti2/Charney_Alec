@@ -39,16 +39,39 @@ export async function handler(event, context) {
     const timestamp = new Date().toISOString();
     const randomId = Math.floor(Math.random() * 9999);
     
+    // Get a real agent from the database for testing
+    console.log('🔍 Attempting to fetch agents from database...');
+    const { data: agents, error: agentsError } = await userSupabase
+      .from('agents')
+      .select('id, full_name, email')
+      .limit(5);
+    
+    if (agentsError) {
+      console.error('❌ Failed to fetch agents for test transaction:', agentsError);
+      console.error('Error details:', JSON.stringify(agentsError, null, 2));
+    } else {
+      console.log('📋 Agents query result:', agents);
+    }
+    
+    const testAgentId = agents && agents.length > 0 ? agents[0].id : null;
+    const testAgentName = agents && agents.length > 0 ? agents[0].full_name : `Test Agent ${randomId}`;
+    
+    console.log(`🎯 Using agent for test: ${testAgentName} (${testAgentId})`);
+    
+    if (!testAgentId) {
+      console.warn('⚠️  No agent ID available - will create transaction without agent reference');
+    }
+    
     const transactionData = {
       property_address: `${randomId} Test Street, Demo City, ST 12345`,
-      final_sale_price: test_type === 'phase1a' ? 750000 : 850000,
-      final_broker_agent_name: `Test Agent ${randomId}`,
-      final_listing_commission_percent: 3.0,
+      final_sale_price: test_type === 'phase1a' ? 750000 : 1000000,
+      final_broker_agent_name: testAgentName,
+      final_listing_commission_percent: 4.2,
       final_buyer_commission_percent: 2.5,
       final_agent_split_percent: 75,
       status: test_type === 'phase1a' ? 'approved' : 'in_queue',
       intake_status: test_type === 'phase1a' ? 'completed' : 'in_review',
-      agent_id: null,
+      agent_id: testAgentId,
       brokerage_id: '5cac5c2d-8aa8-4509-92b2-137b590e3b0d'
     };
 
@@ -67,7 +90,7 @@ export async function handler(event, context) {
     const evidenceData = {
       transaction_id: transaction.id,
       extraction_data: {
-        broker_agent_name: transactionData.final_broker_agent_name,
+        broker_agent_name: testAgentName,
         property_address: transactionData.property_address,
         sale_price: transactionData.final_sale_price,
         listing_side_commission_percent: transactionData.final_listing_commission_percent,

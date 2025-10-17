@@ -140,15 +140,27 @@ export function transformTransactionsForUI(transactions) {
     const evidence = transaction.commission_evidences?.[0];
     const extractionData = evidence?.extraction_data || {};
 
+    // Calculate total commission and agent payout
+    const salePrice = transaction.final_sale_price || extractionData.sale_price || 0;
+    const commissionRate = transaction.final_listing_commission_percent || 
+                          extractionData.listing_side_commission_percent || 
+                          3.0;
+    const agentSplit = transaction.final_agent_split_percent || 
+                      extractionData.agent_split_percent || 
+                      100;
+
+    const totalCommission = salePrice * (commissionRate / 100);
+    const agentPayout = totalCommission * (agentSplit / 100);
+
     return {
       id: transaction.id,
       broker: transaction.final_broker_agent_name || extractionData.broker_agent_name || 'Unknown Agent',
       propertyAddress: transaction.property_address || extractionData.property_address || 'Unknown Property',
-      salePrice: transaction.final_sale_price || extractionData.sale_price || 0,
-      grossCommissionRate: 
-        transaction.final_listing_commission_percent || 
-        extractionData.listing_side_commission_percent || 
-        3.0,
+      salePrice: salePrice,
+      grossCommissionRate: commissionRate,
+      agentSplitPercent: agentSplit,
+      totalCommission: totalCommission,
+      agentPayout: agentPayout,
       status: getUIStatus(transaction),
       confidence: evidence?.confidence || 0,
       requiresReview: evidence?.requires_review || false,
@@ -248,8 +260,9 @@ export function transformPayoutsForUI(payouts) {
       return null;
     }
 
-    const transaction = payout.transactions;
-    const agent = payout.agents;
+    // With explicit foreign key syntax, the data structure uses the foreign key names
+    const transaction = payout.transactions;  // Note: plural when using explicit FK syntax
+    const agent = payout.agents;              // Note: plural when using explicit FK syntax
 
     console.log('Processing payout:', {
       id: payout.id,
@@ -258,11 +271,17 @@ export function transformPayoutsForUI(payouts) {
       agent: agent
     });
 
+    // Validate payout amount
+    const parsedAmount = parseFloat(payout.payout_amount);
+    if (isNaN(parsedAmount)) {
+      console.error(`Invalid payout amount for payout ${payout.id}:`, payout.payout_amount);
+    }
+
     const transformedPayout = {
       id: payout.id,
       transaction_id: payout.transaction_id,
       agent_id: payout.agent_id,
-      payout_amount: parseFloat(payout.payout_amount) || 0,
+      payout_amount: parsedAmount || 0,
       status: payout.status || 'unknown',
       auto_ach: payout.auto_ach || false,
       batch_id: payout.batch_id,
@@ -272,7 +291,6 @@ export function transformPayoutsForUI(payouts) {
       paid_at: payout.paid_at,
       failure_reason: payout.failure_reason,
       created_at: payout.created_at,
-      updated_at: payout.updated_at,
       
       // Transform field names to match UI expectations
       broker: agent?.full_name || transaction?.final_broker_agent_name || 'Unknown Agent',
@@ -288,9 +306,22 @@ export function transformPayoutsForUI(payouts) {
       // Keep raw data for advanced operations
       _rawPayout: payout,
       _rawTransaction: transaction,
+      _rawAgent: agent
     };
 
     console.log('Transformed payout:', transformedPayout);
+    
+    // Validation warnings
+    if (!transformedPayout.broker || transformedPayout.broker === 'Unknown Agent') {
+      console.warn(`Payout ${payout.id} has no broker name. Agent:`, agent, 'Transaction:', transaction);
+    }
+    if (!transformedPayout.propertyAddress || transformedPayout.propertyAddress === 'Unknown Property') {
+      console.warn(`Payout ${payout.id} has no property address. Transaction:`, transaction);
+    }
+    if (transformedPayout.payout_amount === 0) {
+      console.warn(`Payout ${payout.id} has zero amount. Raw amount:`, payout.payout_amount);
+    }
+    
     return transformedPayout;
   }).filter(Boolean); // Remove any null entries
 }
