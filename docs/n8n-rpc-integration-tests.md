@@ -83,9 +83,61 @@ RETURNS TABLE(
 - **Parameter Name**: Must exactly match `p_transaction_id` (SQL function parameter)
 - **Dynamic Value**: `{{ $json.id }}` pulls transaction ID from previous workflow step
 
----
+## Error Handling Strategy
 
-## Testing Process
+### n8n Workflow Error Handling
+
+**Critical**: Your n8n workflow should include proper error handling for the RPC function call:
+
+#### Error Handling Node Configuration
+Add an "Error Handling" node after the HTTP Request node:
+
+| Parameter | Setting / Value |
+|-----------|----------------|
+| **Node Type** | If |
+| **Conditions** | `{{ $json.error != null }}` |
+| **True Branch** | Error logging and notification |
+| **False Branch** | Continue normal workflow |
+
+#### Error Scenarios to Handle
+
+1. **Duplicate Payout Error**
+   - **Error**: `"Payout already exists for transaction"`
+   - **Action**: Log warning, continue workflow (not critical)
+   - **n8n Response**: Set workflow variable `payout_existed = true`
+
+2. **Transaction Not Found**
+   - **Error**: `"Transaction not found"`
+   - **Action**: Stop workflow, alert administrators
+   - **n8n Response**: Trigger error notification workflow
+
+3. **Transaction Not Approved**
+   - **Error**: `"Transaction must be approved"`
+   - **Action**: Check transaction status, potentially retry
+   - **n8n Response**: Query transaction status, conditional retry
+
+4. **Database Connection Issues**
+   - **Error**: Network timeouts, 500 errors
+   - **Action**: Retry with exponential backoff
+   - **n8n Response**: Use retry node with 3 attempts
+
+#### Example Error Handling Flow
+```
+[HTTP Request: Create Payout] 
+    ↓
+[If: Check for Errors]
+    ├─ True → [Log Error] → [Send Alert] → [Stop]
+    └─ False → [Continue Workflow] → [Success Actions]
+```
+
+### Netlify Function Error Handling
+
+The `approve-transaction.js` function implements comprehensive error handling:
+
+- **Categorized Errors**: Different error types receive different handling
+- **Audit Trail**: All errors logged to `transaction_events` table
+- **Graceful Degradation**: Transaction approval succeeds even if payout creation fails
+- **Detailed Response**: Returns specific error information for debugging
 
 ### Test 1: Initial Function Verification
 **Command Used**:

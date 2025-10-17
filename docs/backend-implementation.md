@@ -187,16 +187,16 @@ const subscribeToPayoutUpdates = () => {
 ```
 
 **Netlify Functions Required:**
-- [ ] `create_commission_payout` (Supabase RPC) - Auto-create payouts when transactions approved
-- [ ] `schedule-payout.js` - Handle payment scheduling with validation
-- [ ] `update-payout-status.js` - Update payout status (pending → processing → paid)
-- [ ] `process-ach-payment.js` - Process ACH payments with proper error handling
+- [X] `create_commission_payout` (Supabase RPC) - Auto-create payouts when transactions approved
+- [X] `schedule-payout.js` - Handle payment scheduling with validation
+- [X] `update-payout-status.js` - Update payout status (pending → processing → paid)
+- [X] `process-ach-payment.js` - Process ACH payments with proper error handling
 
 **Database Integration:**
-- [ ] Commission payouts automatically created via RPC when transactions reach approved status
-- [ ] Payout data accessible through shared DashboardContext polling
-- [ ] Real-time updates for payment status changes
-- [ ] Audit trail for all payment operations through transaction_events
+- [X] Commission payouts automatically created via RPC when transactions approved
+- [X] Payout data accessible through shared DashboardContext polling
+- [X] Real-time updates for payment status changes
+- [X] Audit trail for all payment operations through transaction_events
 
 #### **Stage 2.1: Commission Payout RPC Function**
 - [X] Create `create_commission_payout` RPC function in Supabase
@@ -208,15 +208,15 @@ const subscribeToPayoutUpdates = () => {
 #### **Stage 2.2: Auto-Payout Integration with Approval Flows**
 - [X] Update `netlify/functions/approve-transaction.js` to call RPC after transaction approval
 - [X] Add Supabase RPC node to n8n workflow after auto-approval
-- [ ] Add error handling for payout creation failures in both flows
+- [X] Add error handling for payout creation failures in both flows
 - [ ] Test end-to-end: approval → payout creation → audit trail
-- [ ] Document RPC integration with code comments per strategy
+- [X] Document RPC integration with code comments per strategy
 
 #### **Stage 2.3: Payment Operation Functions**
-- [ ] Create `netlify/functions/schedule-payout.js` for payment scheduling
-- [ ] Create `netlify/functions/update-payout-status.js` for status updates
-- [ ] Create `netlify/functions/process-ach-payment.js` for ACH processing
-- [ ] Add proper authentication and error handling to all payment functions
+- [X] Create `netlify/functions/schedule-payout.js` for payment scheduling
+- [X] Create `netlify/functions/update-payout-status.js` for status updates
+- [X] Create `netlify/functions/process-ach-payment.js` for ACH processing
+- [X] Add proper authentication and error handling to all payment functions
 - [ ] Test each function independently with sample data
 
 #### **Stage 2.4: Frontend Context Integration**
@@ -228,12 +228,13 @@ const subscribeToPayoutUpdates = () => {
 - [X] Replace mock data imports with `DashboardContext` consumption
 
 #### **Stage 2.5: Payment Actions Integration**
-- [ ] Wire "Schedule Payout" button to call `schedule-payout.js` function
-- [ ] Wire "Mark as Paid" button to call `update-payout-status.js` function
-- [ ] Wire "Process ACH" button to call `process-ach-payment.js` function
-- [ ] Trigger `refetchTransactions()` and `refetchPayouts()` after scheduling/approving payouts so totals stay current
+- [X] Wire "Schedule Payout" button to call `schedule-payout.js` function
+- [X] Wire "Mark as Paid" button to call `update-payout-status.js` function
+- [X] Wire "Process ACH" button to call `process-ach-payment.js` function
+- [X] Trigger `refetchTransactions()` and `refetchPayouts()` after scheduling/approving payouts so totals stay current
 - [X] Add manual refresh capability for payments tab
 - [ ] Surface ACH flags and failure states using real data from Supabase
+- [ ] Test all payment button actions work correctly with real data
 
 #### **Stage 2.6: Testing & Validation**
 - [ ] Test complete flow: Transaction Approval → Payout Creation → Payment Scheduling → UI Display

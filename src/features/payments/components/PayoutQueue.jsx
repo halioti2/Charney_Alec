@@ -105,38 +105,63 @@ export default function PayoutQueue() {
         throw new Error('Authentication required');
       }
 
-      // Generate batch ID
-      const batchId = `batch_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      // Process each selected payout individually for better error handling
+      const results = [];
+      for (const item of selectedItemsData) {
+        try {
+          const response = await fetch('/.netlify/functions/schedule-payout', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              payout_id: item.id,
+              ach_enabled: payoutData.achEnabled,
+              scheduled_date: new Date().toISOString(), // Schedule for immediate processing
+              notes: `Batch scheduled via payout queue on ${new Date().toLocaleDateString()}`
+            }),
+          });
 
-      const response = await fetch('/.netlify/functions/process-payment', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          transactionIds: selectedItemsData.map(item => item.id),
-          batchId: batchId,
-          achEnabled: payoutData.achEnabled,
-          batchNote: payoutData.batchNote
-        }),
-      });
+          const result = await response.json();
 
-      const result = await response.json();
+          if (!response.ok || !result.success) {
+            throw new Error(result.error || `Failed to schedule payout ${item.id}`);
+          }
 
-      if (!response.ok || !result.success) {
-        throw new Error(result.error || 'Failed to process payment');
+          results.push({ success: true, payout_id: item.id, result });
+        } catch (error) {
+          console.error(`Error scheduling payout ${item.id}:`, error);
+          results.push({ success: false, payout_id: item.id, error: error.message });
+        }
       }
 
-      // Success - refresh the payment data and clear selections
+      // Count successful and failed operations
+      const successCount = results.filter(r => r.success).length;
+      const failureCount = results.filter(r => !r.success).length;
+
+      // Refresh payment data regardless of success/failure
       await refetchPaymentData();
       setSelectedItems(new Set());
       setShowModal(false);
 
-      pushToast({
-        message: `Successfully scheduled ${result.processed_count} payout${result.processed_count !== 1 ? 's' : ''} (Batch: ${result.batch_id})`,
-        type: "success"
-      });
+      // Show appropriate toast message
+      if (successCount > 0 && failureCount === 0) {
+        pushToast({
+          message: `Successfully scheduled ${successCount} payout${successCount !== 1 ? 's' : ''}`,
+          type: "success"
+        });
+      } else if (successCount > 0 && failureCount > 0) {
+        pushToast({
+          message: `Scheduled ${successCount} payout${successCount !== 1 ? 's' : ''}, ${failureCount} failed`,
+          type: "warning"
+        });
+      } else {
+        pushToast({
+          message: `Failed to schedule ${failureCount} payout${failureCount !== 1 ? 's' : ''}`,
+          type: "error"
+        });
+      }
 
     } catch (error) {
       console.error('Error processing payout:', error);

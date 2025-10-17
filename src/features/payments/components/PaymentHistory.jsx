@@ -1,11 +1,14 @@
 import { useState, useMemo } from 'react';
+import { useToast } from '../../../context/ToastContext.jsx';
 import { useDashboardContext } from '../../../context/DashboardContext.jsx';
 
 export default function PaymentHistory() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [achFilter, setAchFilter] = useState('all');
+  const [processingActions, setProcessingActions] = useState(new Set());
 
-  const { paymentHistory, isRefreshingPayments } = useDashboardContext();
+  const { paymentHistory, isRefreshingPayments, refetchPaymentData } = useDashboardContext();
+  const { pushToast } = useToast();
 
   // Filter payment history data based on filters
   const filteredHistoryData = useMemo(() => {
@@ -89,6 +92,200 @@ export default function PaymentHistory() {
         Manual
       </span>
     );
+  };
+
+  // Get auth token helper
+  const getAuthToken = () => {
+    return localStorage.getItem('supabase.auth.token') || 
+           JSON.parse(localStorage.getItem('sb-' + process.env.VITE_SUPABASE_URL.split('//')[1].split('.')[0] + '-auth-token'))?.access_token;
+  };
+
+  // Payment action handlers
+  const handleMarkAsPaid = async (item) => {
+    const payoutId = item._rawTransaction?.payout_id || item.id;
+    setProcessingActions(prev => new Set([...prev, payoutId]));
+
+    try {
+      const token = getAuthToken();
+      if (!token) throw new Error('Authentication required');
+
+      const response = await fetch('/.netlify/functions/update-payout-status', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          payout_id: payoutId,
+          new_status: 'paid',
+          paid_at: new Date().toISOString(),
+          notes: 'Manually marked as paid via payment history'
+        }),
+      });
+
+      const result = await response.json();
+      
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Failed to mark as paid');
+      }
+
+      await refetchPaymentData();
+      pushToast({
+        message: `Payment for ${item.broker} marked as paid`,
+        type: "success"
+      });
+
+    } catch (error) {
+      console.error('Error marking payment as paid:', error);
+      pushToast({
+        message: `Error: ${error.message}`,
+        type: "error"
+      });
+    } finally {
+      setProcessingActions(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(payoutId);
+        return newSet;
+      });
+    }
+  };
+
+  const handleProcessACH = async (item) => {
+    const payoutId = item._rawTransaction?.payout_id || item.id;
+    setProcessingActions(prev => new Set([...prev, payoutId]));
+
+    try {
+      const token = getAuthToken();
+      if (!token) throw new Error('Authentication required');
+
+      const response = await fetch('/.netlify/functions/process-ach-payment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          payout_id: payoutId,
+          ach_provider: 'stripe', // Default provider
+          test_mode: process.env.NODE_ENV !== 'production'
+        }),
+      });
+
+      const result = await response.json();
+      
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Failed to process ACH payment');
+      }
+
+      await refetchPaymentData();
+      pushToast({
+        message: `ACH payment initiated for ${item.broker}`,
+        type: "success"
+      });
+
+    } catch (error) {
+      console.error('Error processing ACH payment:', error);
+      pushToast({
+        message: `ACH Error: ${error.message}`,
+        type: "error"
+      });
+    } finally {
+      setProcessingActions(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(payoutId);
+        return newSet;
+      });
+    }
+  };
+
+  const handleRetryPayment = async (item) => {
+    const payoutId = item._rawTransaction?.payout_id || item.id;
+    setProcessingActions(prev => new Set([...prev, payoutId]));
+
+    try {
+      const token = getAuthToken();
+      if (!token) throw new Error('Authentication required');
+
+      // First update status back to scheduled
+      const response = await fetch('/.netlify/functions/update-payout-status', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          payout_id: payoutId,
+          new_status: 'scheduled',
+          notes: 'Retrying payment from payment history'
+        }),
+      });
+
+      const result = await response.json();
+      
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Failed to retry payment');
+      }
+
+      await refetchPaymentData();
+      pushToast({
+        message: `Payment for ${item.broker} rescheduled for retry`,
+        type: "success"
+      });
+
+    } catch (error) {
+      console.error('Error retrying payment:', error);
+      pushToast({
+        message: `Retry Error: ${error.message}`,
+        type: "error"
+      });
+    } finally {
+      setProcessingActions(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(payoutId);
+        return newSet;
+      });
+    }
+  };
+
+  // Determine which actions are available for each item
+  const getAvailableActions = (item) => {
+    const paymentStatus = item._rawTransaction?.payment_status;
+    const isPaid = !!item._rawTransaction?.paid_at;
+    const payoutId = item._rawTransaction?.payout_id || item.id;
+    const isProcessing = processingActions.has(payoutId);
+
+    if (isPaid) return []; // No actions for completed payments
+    
+    const actions = [];
+    
+    if (paymentStatus === 'scheduled' || paymentStatus === 'ready') {
+      actions.push({ 
+        label: 'Mark as Paid', 
+        handler: () => handleMarkAsPaid(item),
+        className: 'bg-green-600 hover:bg-green-700 text-white'
+      });
+      
+      if (item.auto_ach) {
+        actions.push({ 
+          label: 'Process ACH', 
+          handler: () => handleProcessACH(item),
+          className: 'bg-blue-600 hover:bg-blue-700 text-white'
+        });
+      }
+    }
+    
+    if (paymentStatus === 'failed') {
+      actions.push({ 
+        label: 'Retry', 
+        handler: () => handleRetryPayment(item),
+        className: 'bg-orange-600 hover:orange-700 text-white'
+      });
+    }
+
+    return actions.map(action => ({
+      ...action,
+      disabled: isProcessing
+    }));
   };
 
   // Loading state
@@ -178,6 +375,7 @@ export default function PaymentHistory() {
               <th className="p-4 text-center">Status</th>
               <th className="p-4 text-center">Method</th>
               <th className="p-4">Reference</th>
+              <th className="p-4 text-center">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -206,6 +404,23 @@ export default function PaymentHistory() {
                 </td>
                 <td className="p-4 text-charney-gray font-mono">
                   {item._rawTransaction?.ach_reference || item._rawTransaction?.payment_batch_id || item.id}
+                </td>
+                <td className="p-4">
+                  <div className="flex gap-2">
+                    {getAvailableActions(item).map((action, index) => (
+                      <button
+                        key={index}
+                        onClick={action.handler}
+                        disabled={action.disabled}
+                        className={`px-3 py-1 text-xs font-bold uppercase rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${action.className}`}
+                      >
+                        {action.disabled ? 'Processing...' : action.label}
+                      </button>
+                    ))}
+                    {getAvailableActions(item).length === 0 && (
+                      <span className="text-xs text-charney-gray italic">No actions</span>
+                    )}
+                  </div>
                 </td>
               </tr>
             ))}
