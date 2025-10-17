@@ -156,13 +156,14 @@ export function DashboardProvider({ children, initialState = {} }) {
 
     const transactionSub = subscribeToTransactions(() => {
       // Refresh data when transactions change
-      console.log('Realtime: Transaction update detected, refetching...');
+      console.log('Realtime: Transaction update detected, refetching coordinator and payment data...');
       refetchCoordinatorData();
+      refetchPaymentData(); // Also refresh payment data when transactions change
     });
 
     const evidenceSub = subscribeToCommissionEvidences(() => {
       // Refresh data when commission evidences change
-      console.log('Realtime: Evidence update detected, refetching...');
+      console.log('Realtime: Evidence update detected, refetching coordinator data...');
       refetchCoordinatorData();
     });
 
@@ -172,26 +173,27 @@ export function DashboardProvider({ children, initialState = {} }) {
       transactionSub.unsubscribe();
       evidenceSub.unsubscribe();
     };
-  }, [refetchCoordinatorData]); // Remove realtimeSubscriptions dependency
+  }, [refetchCoordinatorData, refetchPaymentData]); // Add refetchPaymentData dependency
 
   // Initial data fetch and subscription setup
   useEffect(() => {
     let currentSubscriptions = [];
 
     const setupData = async () => {
+      console.log('Setting up initial data and subscriptions...');
       // Initial fetch for both coordinator and payments data
       await refetchCoordinatorData();
       await refetchPaymentData();
 
       // Setup subscriptions (shared for both coordinator and payments)
       const transactionSub = subscribeToTransactions(() => {
-        console.log('Realtime: Transaction update detected, refetching...');
+        console.log('Realtime: Transaction update detected, refetching both datasets...');
         refetchCoordinatorData();
         refetchPaymentData(); // Also refresh payment data
       });
 
       const evidenceSub = subscribeToCommissionEvidences(() => {
-        console.log('Realtime: Evidence update detected, refetching...');
+        console.log('Realtime: Evidence update detected, refetching coordinator data...');
         refetchCoordinatorData();
       });
 
@@ -204,18 +206,31 @@ export function DashboardProvider({ children, initialState = {} }) {
     return () => {
       currentSubscriptions.forEach(sub => sub.unsubscribe());
     };
-  }, []); // Empty dependency array for initial setup only
+  }, [refetchCoordinatorData, refetchPaymentData]); // Include both dependencies
 
   // Polling for coordinator data (30-60s backup)
   useEffect(() => {
     const pollInterval = setInterval(() => {
       if (!isRefreshing) {
+        console.log('Polling interval: Refreshing coordinator data...');
         refetchCoordinatorData();
       }
     }, 45000); // Poll every 45 seconds
 
     return () => clearInterval(pollInterval);
   }, [isRefreshing, refetchCoordinatorData]);
+
+  // Polling for payment data (more frequent to catch payout changes)
+  useEffect(() => {
+    const paymentPollInterval = setInterval(() => {
+      if (!isRefreshingPayments) {
+        console.log('Polling interval: Refreshing payment data...');
+        refetchPaymentData();
+      }
+    }, 30000); // Poll every 30 seconds for payments
+
+    return () => clearInterval(paymentPollInterval);
+  }, [isRefreshingPayments, refetchPaymentData]);
 
   const contextValue = useMemo(
     () => ({

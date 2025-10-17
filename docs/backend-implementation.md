@@ -252,6 +252,15 @@ const subscribeToPayoutUpdates = () => {
 - [ ] Verify payment status changes reflect immediately in PaymentHistory
 - [ ] Test edge cases: rapid button clicks, network failures, invalid data
 
+#### **Stage 2.8: Critical Data Display Issues (URGENT)**
+- [X] **Fix Coordinator auto-refresh**: Added automatic payment data refresh when transactions update via realtime subscriptions
+- [X] **Fix Payments data transformation**: Fixed field name mapping (agent_name → broker, property_address → propertyAddress) and added null checking with parseFloat for amounts
+- [X] **Fix Payments manual refresh requirement**: Enhanced polling frequency (30s for payments vs 45s for coordinator) and added cross-tab refresh triggers
+- [X] **Debug PayoutQueue data flow**: Added comprehensive logging and null-safe transformation with fallback values for missing data
+- [X] **Verify real-time subscription lifecycle**: Updated subscriptions to refresh both coordinator and payment data on transaction changes
+- [X] **Test cross-tab data consistency**: Enhanced realtime subscriptions to refresh both datasets, added test data migration for validation
+- [X] **Validate data in browser console**: Created comprehensive test script (test-commission-payouts.js) with NaN detection and data validation
+
 ### **Stage 3: Broker & Commission Tracker Integration (Future)**
 **Scope:** Complete remaining dashboard tabs after frontend UI is ready
 

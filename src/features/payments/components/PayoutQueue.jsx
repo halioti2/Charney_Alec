@@ -17,6 +17,33 @@ export default function PayoutQueue() {
   // Debug: Log payment data whenever it changes
   console.log('PayoutQueue received paymentData:', paymentData);
   console.log('PayoutQueue paymentData length:', paymentData?.length || 0);
+  
+  // Debug individual items for data issues
+  if (paymentData && paymentData.length > 0) {
+    paymentData.forEach((item, index) => {
+      console.log(`PayoutQueue item ${index}:`, {
+        id: item.id,
+        broker: item.broker,
+        propertyAddress: item.propertyAddress,
+        payout_amount: item.payout_amount,
+        salePrice: item.salePrice,
+        status: item.status,
+        auto_ach: item.auto_ach,
+        created_at: item.created_at
+      });
+      
+      // Check for data issues
+      if (isNaN(item.payout_amount)) {
+        console.warn(`⚠️ Item ${index} has NaN payout_amount:`, item.payout_amount);
+      }
+      if (!item.broker || item.broker === 'Unknown Agent') {
+        console.warn(`⚠️ Item ${index} has missing/unknown broker:`, item.broker);
+      }
+      if (!item.propertyAddress || item.propertyAddress === 'Unknown Property') {
+        console.warn(`⚠️ Item ${index} has missing/unknown property:`, item.propertyAddress);
+      }
+    });
+  }
 
   // Handle refresh manually when needed
   const handleRefresh = async () => {
@@ -47,6 +74,16 @@ export default function PayoutQueue() {
     paymentData.filter(item => selectedItems.has(item.id)),
     [selectedItems, paymentData]
   );
+
+  // Debug function for manual testing
+  window.debugPayoutQueue = () => {
+    console.log('=== PAYOUT QUEUE DEBUG ===');
+    console.log('paymentData:', paymentData);
+    console.log('selectedItems:', selectedItems);
+    console.log('selectedItemsData:', selectedItemsData);
+    console.log('totalPayout:', totalPayout);
+    console.log('isRefreshingPayments:', isRefreshingPayments);
+  };
 
   const handleSelectItem = (itemId) => {
     setSelectedItems(prev => {

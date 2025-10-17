@@ -193,6 +193,8 @@ function getUIStatus(transaction) {
  */
 export async function fetchCommissionPayouts() {
   try {
+    console.log('Fetching commission payouts from Supabase...');
+    
     const { data: payouts, error } = await supabase
       .from('commission_payouts')
       .select(`
@@ -201,9 +203,12 @@ export async function fetchCommissionPayouts() {
           id,
           property_address,
           final_sale_price,
-          created_at
+          final_broker_agent_name,
+          agent_id,
+          created_at,
+          status
         ),
-        agents (
+        agents!commission_payouts_agent_id_fkey (
           id,
           full_name,
           email
@@ -216,6 +221,7 @@ export async function fetchCommissionPayouts() {
       throw error;
     }
 
+    console.log('Fetched commission payouts:', payouts);
     return payouts || [];
   } catch (error) {
     console.error('Failed to fetch commission payouts:', error);
@@ -229,19 +235,36 @@ export async function fetchCommissionPayouts() {
  * @returns {Array} Transformed payout data for UI components
  */
 export function transformPayoutsForUI(payouts) {
-  if (!Array.isArray(payouts)) return [];
+  if (!Array.isArray(payouts)) {
+    console.warn('transformPayoutsForUI: payouts is not an array:', payouts);
+    return [];
+  }
+
+  console.log('Transforming payouts for UI:', payouts);
 
   return payouts.map(payout => {
+    if (!payout) {
+      console.warn('transformPayoutsForUI: null/undefined payout item');
+      return null;
+    }
+
     const transaction = payout.transactions;
     const agent = payout.agents;
 
-    return {
+    console.log('Processing payout:', {
+      id: payout.id,
+      payout_amount: payout.payout_amount,
+      transaction: transaction,
+      agent: agent
+    });
+
+    const transformedPayout = {
       id: payout.id,
       transaction_id: payout.transaction_id,
       agent_id: payout.agent_id,
-      payout_amount: payout.payout_amount,
-      status: payout.status,
-      auto_ach: payout.auto_ach,
+      payout_amount: parseFloat(payout.payout_amount) || 0,
+      status: payout.status || 'unknown',
+      auto_ach: payout.auto_ach || false,
       batch_id: payout.batch_id,
       ach_provider: payout.ach_provider,
       ach_reference: payout.ach_reference,
@@ -249,13 +272,25 @@ export function transformPayoutsForUI(payouts) {
       paid_at: payout.paid_at,
       failure_reason: payout.failure_reason,
       created_at: payout.created_at,
-      // Related data
+      updated_at: payout.updated_at,
+      
+      // Transform field names to match UI expectations
+      broker: agent?.full_name || transaction?.final_broker_agent_name || 'Unknown Agent',
+      propertyAddress: transaction?.property_address || 'Unknown Property',
+      salePrice: parseFloat(transaction?.final_sale_price) || 0,
+      
+      // Additional fields for UI display
+      agent_name: agent?.full_name || transaction?.final_broker_agent_name,
+      agent_email: agent?.email,
       property_address: transaction?.property_address,
       final_sale_price: transaction?.final_sale_price,
-      agent_name: agent?.full_name,
-      agent_email: agent?.email,
+      
       // Keep raw data for advanced operations
       _rawPayout: payout,
+      _rawTransaction: transaction,
     };
-  });
+
+    console.log('Transformed payout:', transformedPayout);
+    return transformedPayout;
+  }).filter(Boolean); // Remove any null entries
 }
