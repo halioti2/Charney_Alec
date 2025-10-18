@@ -1,19 +1,23 @@
 import React, { useState, useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { useCommissionData } from '../../hooks/useCommissionData';
-import { formatCurrency } from '../../lib/formatters';
+import useAgentPerformance from '../../hooks/useAgentPerformance';
+import { formatCurrency, formatCurrencyAbbreviated, formatNumberAbbreviated } from '../../lib/formatters';
 
 const AgentComparisonChart = ({ period }) => {
   const [metric, setMetric] = useState('gci'); // 'gci', 'dealVolume', 'transactions'
-  const { agents } = useCommissionData({ period });
+  const { agents } = useAgentPerformance(period);
 
   const chartData = useMemo(() => agents.map(agent => {
-    const closedDeals = agent.deals.filter(d => d.stage === 'Closed');
+    const closedDeals = agent.deals.filter(d => d.status === 'Paid' || d.status === 'Approved');
+    const dealsInProgress = agent.deals.filter(d => d.status !== 'Paid' && d.status !== 'Approved');
+
     return {
       name: agent.name,
-      gci: closedDeals.reduce((sum, d) => sum + d.gci, 0),
-      dealVolume: closedDeals.reduce((sum, d) => sum + d.value, 0),
-      transactions: closedDeals.length,
+      gci: agent.totalGci,
+      dealVolume: agent.totalDealVolume,
+      transactions: agent.deals.length,
+      closedDeals: closedDeals.length,
+      dealsInProgress: dealsInProgress.length,
     };
   }), [agents]);
 
@@ -37,10 +41,21 @@ const AgentComparisonChart = ({ period }) => {
         <BarChart data={chartData}>
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis dataKey="name" />
-          <YAxis tickFormatter={(value) => metricConfig[metric].formatter(value, 0)} />
+          <YAxis
+            tickFormatter={(value) => metric === 'transactions' ? formatNumberAbbreviated(value) : formatCurrencyAbbreviated(value)}
+            width={80}
+            allowDecimals={metric !== 'transactions'}
+          />
           <Tooltip formatter={(value) => metricConfig[metric].formatter(value)} />
           <Legend />
-          <Bar dataKey={metric} fill="#82ca9d" name={metricConfig[metric].name} />
+          {metric === 'transactions' ? (
+            <>
+              <Bar dataKey="closedDeals" fill="#10b981" name="Closed Deals" />
+              <Bar dataKey="dealsInProgress" fill="#f59e0b" name="In Progress" />
+            </>
+          ) : (
+            <Bar dataKey={metric} fill="#82ca9d" name={metricConfig[metric].name} />
+          )}
         </BarChart>
       </ResponsiveContainer>
     </div>

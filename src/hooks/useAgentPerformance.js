@@ -6,13 +6,50 @@ function formatCurrency(n) {
   return `$${Number(n).toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
 }
 
+function getDateRangeForPeriod(period) {
+  const today = new Date();
+  const endDate = new Date(today);
+  const startDate = new Date(today);
+
+  switch (period) {
+    case 'This Month':
+      startDate.setDate(1);
+      break;
+    case 'Last 90 Days':
+      startDate.setDate(today.getDate() - 90);
+      break;
+    case 'YTD':
+      startDate.setMonth(0);
+      startDate.setDate(1);
+      break;
+    default:
+      startDate.setDate(today.getDate() - 90);
+  }
+
+  return { startDate, endDate };
+}
+
+function filterCommissionsByPeriod(commissions, period) {
+  const { startDate, endDate } = getDateRangeForPeriod(period);
+
+  return commissions.filter((c) => {
+    if (!c.created_at) return true; // Include if no date
+    const commissionDate = new Date(c.created_at);
+    return commissionDate >= startDate && commissionDate <= endDate;
+  });
+}
+
 export default function useAgentPerformance(period = 'Last 90 Days') {
   const { commissions, agentPlans } = useDashboardContext();
 
-  // For iteration 1 we treat period as a label only and use all commissions from context
+  // Filter commissions by period
+  const filteredCommissions = useMemo(() => {
+    return filterCommissionsByPeriod(commissions, period);
+  }, [commissions, period]);
+
   const agentsByName = useMemo(() => {
     const map = new Map();
-    commissions.forEach((c) => {
+    filteredCommissions.forEach((c) => {
       const name = c.broker || c.agent || 'Unknown';
       const plan = agentPlans[name];
       const splitDefault = plan ? (plan.primarySplit.agent / 100) : 0.5; // plan stores percent (70 => 0.7)
@@ -54,7 +91,7 @@ export default function useAgentPerformance(period = 'Last 90 Days') {
     }));
 
     return arr;
-  }, [commissions, agentPlans]);
+  }, [filteredCommissions, agentPlans]);
 
   const brokerageTotals = useMemo(() => {
     const totals = { totalDealVolume: 0, totalGci: 0 };
