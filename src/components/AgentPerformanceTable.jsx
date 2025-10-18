@@ -11,9 +11,9 @@ const statusColors = {
   'Awaiting Info': 'bg-orange-100 text-orange-800',
 };
 
-export default function AgentPerformanceTable() {
+export default function AgentPerformanceTable({ period = 'Last 90 Days' }) {
   const { setActiveCommissionId, setModalFocus, setPanelAgent } = useDashboardContext();
-  const { agents, totals } = useAgentPerformance();
+  const { agents, totals } = useAgentPerformance(period);
   const [sortKey, setSortKey] = useState('agent');
   const [sortDir, setSortDir] = useState('desc');
 
@@ -83,8 +83,8 @@ export default function AgentPerformanceTable() {
         {selectedAgent ? (
           <div className="fixed inset-0 z-50 flex items-center justify-center">
             <div className="absolute inset-0 bg-black/40" onClick={() => setSelectedAgent(null)} />
-            <div className="relative w-full max-w-3xl p-4">
-              <AgentDetailsView agentName={selectedAgent} onClose={() => setSelectedAgent(null)} />
+            <div className="relative w-full max-w-4xl p-4">
+              <AgentDetailsView agentName={selectedAgent} onClose={() => setSelectedAgent(null)} period={period} />
             </div>
           </div>
         ) : null}

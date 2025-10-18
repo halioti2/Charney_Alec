@@ -19,14 +19,14 @@ This phase involves building the UI components and populating them with static m
 - [x] **Revenue Chart:** Implement the chart for GCI and Agent Payout trends.
 - [x] **Agent Comparison Chart:** Build the chart for comparing agent performance.
 - [x] **Deal Pipeline Funnel:** Create the funnel chart for deal stages.
-- [ ] **Update Agent Table:** Adapt the existing table for the new design.
+- [x] **Update Agent Table:** Adapt the existing table for the new design.
 
 ## Phase 3: Interactivity
 
 This phase will bring the dashboard to life by adding user interactions.
 
-- [ ] **Date Range Filtering:** Connect the date selector to filter the data.
-- [ ] **Agent Drill-Down:** Implement the logic to view individual agent performance.
+- [x] **Date Range Filtering:** Connect the date selector to filter the data.
+- [x] **Agent Drill-Down:** Implement the logic to view individual agent performance.
 
 ## Phase 4: Styling and Refinement
 

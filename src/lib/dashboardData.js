@@ -58,6 +58,7 @@ export function createMockCommissions(count = 50) {
     ['Inspection_Report.pdf', 'ID_Scan.jpeg', 'Loan_Approval.pdf', 'Bank_Statement.pdf', 'Title_Report.pdf'],
   ];
   const bankInfo = ['Bank of America, Acct: ...1122', 'CitiBank, Acct: ...3344', 'Wells Fargo, Acct: ...5566'];
+  const today = new Date();
 
   return Array.from({ length: count }, (_, index) => {
     const salePrice = 1000000 + Math.random() * 2000000;
@@ -70,9 +71,25 @@ export function createMockCommissions(count = 50) {
     const broker = brokers[index % brokers.length];
     const attachments = attachmentSets[index % attachmentSets.length];
 
+    // Generate dates: 70% in last 90 days, 20% in last 365 days, 10% older
+    // This ensures all agents appear in default period while testing other periods
+    let daysAgo;
+    const rand = Math.random();
+    if (rand < 0.7) {
+      daysAgo = Math.floor(Math.random() * 90); // Last 90 days
+    } else if (rand < 0.9) {
+      daysAgo = 90 + Math.floor(Math.random() * 275); // 90-365 days ago
+    } else {
+      daysAgo = 365 + Math.floor(Math.random() * 30); // 1+ years ago
+    }
+    const createdDate = new Date(today);
+    createdDate.setDate(createdDate.getDate() - daysAgo);
+    const created_at = createdDate.toISOString();
+
     return {
       id: `C10${index + 1}`,
       broker,
+      agent: broker,
       email: `${broker.toLowerCase().replace(/\s/g, '.')}@example.com`,
       property: `${properties[index % properties.length]}, Unit ${10 + index}A`,
       salePrice: finalSalePrice,
@@ -84,6 +101,7 @@ export function createMockCommissions(count = 50) {
       conflict,
       status: conflict ? 'Needs Review' : ['Needs Review', 'Approved', 'Paid', 'Awaiting Info'][index % 4],
       disclosureViewed: index > 2,
+      created_at,
       parsedData: {
         propertyAddress: `${properties[index % properties.length]}, Brooklyn, NY`,
         buyerName: buyers[index % buyers.length],

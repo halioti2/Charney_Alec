@@ -1,5 +1,5 @@
-import React from 'react';
-import { useCommissionData } from '../../hooks/useCommissionData';
+import React, { useMemo } from 'react';
+import useAgentPerformance from '../../hooks/useAgentPerformance';
 import { formatCurrency } from '../../lib/formatters';
 
 const MetricCard = ({ title, value, description }) => (
@@ -11,23 +11,37 @@ const MetricCard = ({ title, value, description }) => (
 );
 
 const KeyMetricsGrid = ({ period }) => {
-  const { totalGci, totalDealVolume, dealsInProgress } = useCommissionData({ period });
+  const { agents } = useAgentPerformance(period);
+
+  const metrics = useMemo(() => {
+    let totalGci = 0;
+    let totalDealVolume = 0;
+    let dealsInProgress = 0;
+
+    agents.forEach((agent) => {
+      totalGci += agent.totalGci;
+      totalDealVolume += agent.totalDealVolume;
+      dealsInProgress += agent.dealsInProgress;
+    });
+
+    return { totalGci, totalDealVolume, dealsInProgress };
+  }, [agents]);
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
       <MetricCard
         title="Total GCI"
-        value={formatCurrency(totalGci)}
+        value={formatCurrency(metrics.totalGci)}
         description="For closed deals in the selected period"
       />
       <MetricCard
         title="Total Deal Volume"
-        value={formatCurrency(totalDealVolume)}
+        value={formatCurrency(metrics.totalDealVolume)}
         description="Value of all closed transactions"
       />
       <MetricCard
         title="Deals In Progress"
-        value={dealsInProgress}
+        value={metrics.dealsInProgress}
         description="Active and contract-stage deals"
       />
     </div>

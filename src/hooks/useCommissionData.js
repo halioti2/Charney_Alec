@@ -1,29 +1,40 @@
 import { useMemo } from 'react';
 import { agents as mockAgents } from '../mocks/dashboardMockData';
 
-// This hook will eventually fetch and process real data.
-// For now, it processes the mock data.
+// Helper function to filter deals by date range
+const filterDealsByPeriod = (deals, period) => {
+  // In a real application, this would parse 'period' and filter by date.
+  // For mock data, we'll assume 'Last 90 Days' is the default and return all for now.
+  // A more robust implementation would involve date parsing and comparison.
+  if (period === 'Last 90 Days') {
+    // For mock data, we'll just return all closed deals as a placeholder
+    return deals.filter(d => d.stage === 'Closed');
+  }
+  // Add other period handling here if needed
+  return deals.filter(d => d.stage === 'Closed');
+};
+
 export const useCommissionData = ({ period }) => {
   const processedData = useMemo(() => {
-    // NOTE: The date filtering logic is not yet implemented.
-    // This will be added in the interactivity phase.
+    const filteredAgents = mockAgents.map(agent => ({
+      ...agent,
+      deals: filterDealsByPeriod(agent.deals, period),
+    }));
 
-    const totalGci = mockAgents.flatMap(a => a.deals)
-      .filter(d => d.stage === 'Closed')
+    const totalGci = filteredAgents.flatMap(a => a.deals)
       .reduce((sum, d) => sum + d.gci, 0);
 
-    const totalDealVolume = mockAgents.flatMap(a => a.deals)
-      .filter(d => d.stage === 'Closed')
+    const totalDealVolume = filteredAgents.flatMap(a => a.deals)
       .reduce((sum, d) => sum + d.value, 0);
       
-    const dealsInProgress = mockAgents.flatMap(a => a.deals)
-        .filter(d => d.stage !== 'Closed' && d.stage !== 'Lead').length;
+    const dealsInProgress = filteredAgents.flatMap(a => a.deals)
+        .filter(d => d.stage === 'Active' || d.stage === 'Contract').length;
 
     return {
       totalGci,
       totalDealVolume,
       dealsInProgress,
-      agents: mockAgents, // Pass through the raw agent data for other components
+      agents: filteredAgents, // Pass through the filtered agent data
     };
   }, [period]); // Dependency array will be used for filtering later
 

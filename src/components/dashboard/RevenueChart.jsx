@@ -1,14 +1,14 @@
 import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { useCommissionData } from '../../hooks/useCommissionData';
-import { formatCurrency } from '../../lib/formatters';
+import useAgentPerformance from '../../hooks/useAgentPerformance';
+import { formatCurrency, formatCurrencyAbbreviated } from '../../lib/formatters';
 
 const RevenueChart = ({ period }) => {
-  const { agents } = useCommissionData({ period });
+  const { agents } = useAgentPerformance(period);
 
   const chartData = agents.map(agent => ({
     name: agent.name,
-    gci: agent.deals.filter(d => d.stage === 'Closed').reduce((sum, d) => sum + d.gci, 0),
+    gci: agent.totalGci,
   }));
 
   return (
@@ -18,7 +18,7 @@ const RevenueChart = ({ period }) => {
         <BarChart data={chartData}>
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis dataKey="name" />
-          <YAxis tickFormatter={(value) => formatCurrency(value, 0)} />
+          <YAxis tickFormatter={(value) => formatCurrencyAbbreviated(value)} dx={-10} />
           <Tooltip formatter={(value) => formatCurrency(value)} />
           <Legend />
           <Bar dataKey="gci" fill="#8884d8" name="Gross Commission Income" />

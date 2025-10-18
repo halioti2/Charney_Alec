@@ -5,7 +5,9 @@ import DashboardHeader from '../components/dashboard/DashboardHeader.jsx';
 import KeyMetricsGrid from '../components/dashboard/KeyMetricsGrid.jsx';
 import RevenueChart from '../components/dashboard/RevenueChart.jsx';
 import AgentComparisonChart from '../components/dashboard/AgentComparisonChart.jsx';
-import DealPipelineFunnel from '../components/dashboard/DealPipelineFunnel.jsx';
+import CommissionSplitFlow from '../components/dashboard/CommissionSplitFlow.jsx';
+// Removed DealPipelineFunnel import
+// import DealPipelineFunnel from '../components/dashboard/DealPipelineFunnel.jsx';
 
 const CommissionDashboard = () => {
     const { activeView } = useDashboardContext();
@@ -22,8 +24,9 @@ const CommissionDashboard = () => {
                     <RevenueChart period={period} />
                     <AgentComparisonChart period={period} />
                 </div>
-                <DealPipelineFunnel period={period} />
-                <AgentPerformanceTable />
+                <CommissionSplitFlow period={period} />
+                {/* Removed DealPipelineFunnel */}
+                <AgentPerformanceTable period={period} />
             </main>
         </div>
     );
