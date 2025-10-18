@@ -1,125 +1,71 @@
-# Implementation Plan: Tracks A/B/C
+# Implementation Plan: Commission Visualization Dashboard
 
-This plan splits work across three tracks:
+This document outlines the technical plan for building the new Commission Visualization Dashboard, based on the user journey defined in `docs/commission-dashboard-user-journey.md`.
 
-- **Track A** – PDF audit workflow (backend + verification modal UI, led by Ethan + Ashley)
-- **Track B** – Payments dashboard UI (batch payouts, optional ACH) led by Erica
-- **Track C** – Commission visualization dashboards (agent performance views) led by Rad
+## 1. Project Setup
 
----
+*   **Charting Library:** We will install and configure `recharts` for creating the data visualizations. It's a composable charting library built on React components.
+    *   **Command:** `npm install recharts`
 
-## Weekend 1 — Alignment, Design & Foundations
+## 2. Mock Data Structure
 
-### Saturday, Oct 11 (10am–4pm) – Hackathon Day
-- **Team (Tracks A, B, C)**  
-  - Sprint kickoff & alignment meeting using user-journey template.  
-  - Produce final user journeys for:
-    - **Priority:** PDF audit flow (upload & email intake).  
-    - Payments dashboard.  
-    - Commission dashboard.  
-  - Deliverable: completed user-journey documents for each flow.
+We will create a mock data file (`src/mocks/dashboardMockData.js`) to simulate the API response. This will allow us to build and test the UI components independently of the backend.
 
-### Saturday Night – Ethan
-- Merge individual journeys into a shared context doc for LLM support.  
-- Deliverable: consolidated user-journey reference.
+```javascript
+// src/mocks/dashboardMockData.js
 
-### Sunday, Oct 12 (10am–4pm)
-- **Track A (Ashley + Ethan)**  
-  - Build static PDF verification modal components (`DealSheetViewer`, editable form, confidence badge, compliance checklist).  
-  - Deliverable: PDF audit UI scaffold that matches the PDF journey.
-- **Track B (Erica)**  
-  - Implement static Payments dashboard (payout queue table with checkboxes, running total summary, confirmation modal, success toast, payment history tab, ACH toggle state).  
-  - Add a top-level "Payments" tab alongside Broker/Coordinator within `DashboardHeader`, ensuring routes/state are scoped to the tab.  
-  - Deliverable: static Payments UI ready for wiring.
-- **Track C (Rad)**  
-  - Construct static Commission visualization screens (date-range selector, sortable Agent Performance table, drill-down detail view, no-data states, data freshness banner).  
-  - Add a top-level "Commission Tracker" tab; isolate components so the tab owns its own state providers and does not interfere with other views.  
-  - Deliverable: static Commission dashboards ready for data binding.
-- **Ethan (backend prep)**  
-  - Draft PDF workflow technical plan (OCR choice, n8n steps) and define golden-document test suite with logging sheet.  
-  - Deliverables: technical plan + accuracy test plan.
+export const agents = [
+  {
+    id: 1,
+    name: 'John Doe',
+    deals: [
+      { id: 101, stage: 'Closed', closeDate: '2025-09-15', value: 500000, gci: 15000 },
+      { id: 102, stage: 'Contract', value: 750000, gci: 22500 },
+      { id: 103, stage: 'Active', value: 600000, gci: 18000 },
+    ],
+  },
+  // ... more agents
+];
 
----
+export const brokerageData = {
+  // Aggregated data for the whole brokerage
+};
+```
 
-## Week 1 — Parallel Development
+## 3. Component Breakdown
 
-### Mon 13 + Tue 14 (6:30pm–10pm)
-- **Ethan (Track A)**  
-  - Build n8n workflow (OCR node, extractor, gatekeeper, Supabase writes).  
-  - Run first accuracy tests with golden set.  
-  - Deliverable: functional backend saving to Supabase commission evidence tables.
-- **Ashley (Track A UI)**  
-  - Finish static PDF UI polish; coordinate with Ethan on webhook endpoints.
-- **Erica & Rad (Track B)**  
-  - Complete static Payments dashboard UI (ensure ACH toggle interactions + error states from journey).  
-  - Deliverable: ready-for-data Payments UI.
-- **Rad (Track C)**  
-  - Continue Commission visualization build-out (agent detail route, stalled-deal indicators, inactive tags).  
-  - Deliverable: ready-for-data Commission UI.
+We will build a new set of components for this dashboard.
 
-### Wednesday, Oct 15 (6:30pm–10pm)
-- **Ethan + Frontend Designer (Track A)**  
-  - Integrate PDF upload UI with n8n webhook; handle confidence + checklist states.  
-  - Continue Payments refinement (hook in notifications triggers).  
-  - Deliverable: working PDF audit flow via UI.
-- **Team (Tracks B & C)**  
-  - Shift focus to Commission dashboard if behind; otherwise begin wiring Payments UI to mock data.
+*   **`pages/CommissionDashboardV2.jsx`**: The main page component that will fetch and manage the state for the dashboard.
+*   **`components/dashboard/DashboardHeader.jsx`**: A new header component that includes the page title and the `DateRangeSelector`.
+*   **`components/dashboard/KeyMetricsGrid.jsx`**: A grid displaying key performance indicators (KPIs) like "Total GCI," "Total Deal Volume," and "Average Time-to-Close" in visually distinct cards.
+*   **`components/dashboard/RevenueChart.jsx`**: A line or bar chart visualizing GCI and Agent Payout trends over time.
+*   **`components/dashboard/AgentComparisonChart.jsx`**: A bar chart comparing agents based on key metrics (GCI, Deal Volume, or Transaction Count).
+*   **`components/dashboard/DealPipelineFunnel.jsx`**: A funnel chart showing the distribution of deals across different stages of the pipeline.
+*   **`components/dashboard/AgentPerformanceTable.jsx`**: We will adapt the existing table to fit the new design and data structure.
 
----
+## 4. Phased Development Plan
 
-## Week 2 — Integration & Presentation Prep
+### Phase 1: Setup and Scaffolding (Current Focus)
 
-### Thursday, Oct 16 – Pursuit Presentation Checkpoint
-- Milestone: demonstrate working PDF prototype + static dashboards.
+1.  **Install Dependencies:** Add `recharts` to the project.
+2.  **Create Mock Data:** Implement the mock data file.
+3.  **Component Shells:** Create empty files for all the new components listed above.
+4.  **New Dashboard Page:** Create `CommissionDashboardV2.jsx` and render the component shells.
 
-### Sat 18 & Sun 19 (10am–4pm)
-- **Saturday Goal**
-  - **Track B (Erica):** connect Payments dashboard to Supabase / mock API, include ACH validation + failure flags.  
-  - **Track C (Rad):** hook Commission dashboards to Supabase aggregates, implement drill-down API, stalled-deal logic.  
-  - **Ethan + Frontend Designer (Track A):** refine PDF workflow, fix verification UI, target feature-complete MVP.
-- **Sunday Goal**
-  - Full-team end-to-end testing across all features.  
-  - Compile bug/UX polish list.  
-  - Begin presentation prep (slide deck + demo outline).
+### Phase 2: Static Component Build
 
-### Monday, Oct 20 – Presentation Rehearsal
-- Team focus shifts entirely to Demo Day prep.  
-- Deliverable: polished slides + rehearsed demo script.
+1.  **Build Key Metrics Grid:** Develop the `KeyMetricsGrid` component and populate it with static data from the mock file.
+2.  **Build Charts:** Implement the `RevenueChart`, `AgentComparisonChart`, and `DealPipelineFunnel` components, rendering them with mock data.
+3.  **Update Table:** Modify the `AgentPerformanceTable` to consume the new mock data structure.
 
-### Tuesday, Oct 21 (6:30pm–10pm) – Queens Tech Demo
-- Dry run with realistic conditions; capture final tweaks.
+### Phase 3: Interactivity
 
-### Wednesday, Oct 22 – Demo Day
-- Final presentation & live demo.
+1.  **Date Range Filtering:** Connect the `DateRangeSelector` to filter the mock data and update all components on the dashboard.
+2.  **Agent Drill-Down:** Implement the logic to select an agent from the table or chart, which will then update the dashboard to show only that agent's data.
 
----
+### Phase 4: Styling and Refinement
 
-## Upcoming Deliverables Summary
-
-| Date | Track | Deliverable |
-| ---- | ----- | ----------- |
-| Oct 11 | Team | Final user journeys (PDF, Payments, Commission) |
-| Oct 11 night | Ethan | Shared context doc |
-| Oct 12 | Track A | PDF audit UI + technical/test plans |
-| Oct 12 | Track B (Erica) | Static Payments dashboard |
-| Oct 12 | Track C (Rad) | Static Commission dashboards |
-| Oct 13-14 | Track A | n8n workflow + initial accuracy run |
-| Oct 13-14 | Track B | Static Payments UI completion |
-| Oct 13-14 | Track C | Static Commission UI completion |
-| Oct 15 | Track A | Integrated PDF audit feature |
-| Oct 16 | All | Pursuit Presentation (working PDF + static dashboards) |
-| Oct 18-19 | Track A | PDF MVP polish + accuracy fixes |
-| Oct 18-19 | Track B | Payments dashboard wired to data |
-| Oct 18-19 | Track C | Commission dashboard wired to data |
-| Oct 18-19 | All | End-to-end testing & presentation prep |
-| Oct 20 | All | Deck + demo rehearsal |
-| Oct 21 | All | Queens Tech demo run |
-| Oct 22 | All | Demo Day |
-
----
-
-## Daily Sync & Integration Rhythm
-- **Morning async check-in:** post branch status and blockers in the team channel.  
-- **Evening merge window (9–10pm):** each track rebases from `main`, runs feature tests, and pushes updates.  
-- Use `integration/<date>` branch for combined testing when multiple tracks need to validate cross-feature flow before merging to `main`.  
-- Flag schema or contract changes in the channel before merging to avoid surprise migrations.
+1.  **CSS Styling:** Apply styles to all new components to ensure a polished and professional look.
+2.  **Responsiveness:** Ensure the dashboard is usable on different screen sizes.
+3.  **Code Cleanup:** Refactor and clean up the code before moving on to backend integration.

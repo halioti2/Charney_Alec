@@ -9,6 +9,7 @@ import ToastContainer from '../components/ToastContainer.jsx';
 import BrokerDetailPanel from '../components/BrokerDetailPanel.jsx';
 import { useDashboardContext } from '../context/DashboardContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
+import CommissionDashboard from './CommissionDashboard.jsx';
 
 export default function DashboardPage() {
   const {
@@ -30,7 +31,7 @@ export default function DashboardPage() {
         <BrokerView hidden={activeView !== 'broker'} />
         <CoordinatorView hidden={activeView !== 'coordinator'} />
         <PaymentsView hidden={activeView !== 'payments'} />
-        <CommissionTrackerView hidden={activeView !== 'commission'} />
+        <CommissionDashboard hidden={activeView !== 'commission'} />
       </main>
       <CommissionModal
         isOpen={Boolean(activeCommission) && modalFocus !== 'audit'}
