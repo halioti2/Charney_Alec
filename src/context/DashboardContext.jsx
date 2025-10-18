@@ -61,6 +61,9 @@ export function DashboardProvider({ children, initialState = {} }) {
   const [paymentTransactions, setPaymentTransactions] = useState([]);
   const [paymentHistory, setPaymentHistory] = useState([]);
   const [isRefreshingPayments, setIsRefreshingPayments] = useState(false);
+  
+  // Track initialization state
+  const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
     if (typeof document === 'undefined') return;
@@ -100,6 +103,7 @@ export function DashboardProvider({ children, initialState = {} }) {
       console.log('Raw transactions:', rawTransactions);
       const transformedTransactions = transformTransactionsForUI(rawTransactions);
       console.log('Transformed transactions:', transformedTransactions);
+      console.log('🎯 Setting coordinator state with', transformedTransactions.length, 'transactions');
       setTransactions(transformedTransactions);
       setCoordinatorData({ lastUpdated: new Date().toISOString() });
     } catch (error) {
@@ -133,6 +137,7 @@ export function DashboardProvider({ children, initialState = {} }) {
       console.log('Transformed payouts:', transformedPayouts);
       console.log('Filtered payment queue data:', paymentQueueData);
       console.log('Filtered payment history data:', paymentHistoryData);
+      console.log('💳 Setting payment state - Queue:', paymentQueueData.length, 'items, History:', paymentHistoryData.length, 'items');
       
       setPaymentData(paymentQueueData);
       setPaymentHistory(paymentHistoryData);
@@ -322,10 +327,23 @@ export function DashboardProvider({ children, initialState = {} }) {
     let currentSubscriptions = [];
 
     const setupData = async () => {
-      console.log('Setting up initial data and subscriptions...');
+      console.log('🚀 DashboardContext: Setting up initial data and subscriptions...');
+      
+      // Small delay to ensure supabase client is fully initialized
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       // Initial fetch for both coordinator and payments data
+      console.log('📊 DashboardContext: Starting initial coordinator data fetch...');
       await refetchCoordinatorData();
+      console.log('✅ DashboardContext: Coordinator data fetch completed');
+      
+      console.log('💰 DashboardContext: Starting initial payment data fetch...');
       await refetchPaymentData();
+      console.log('✅ DashboardContext: Payment data fetch completed');
+      
+      // Mark as initialized after both data fetches complete
+      setIsInitialized(true);
+      console.log('🎉 DashboardContext: Initial data loading completed - context ready!');
 
       // Setup subscriptions (shared for both coordinator and payments)
       const transactionSub = subscribeToTransactions(() => {
@@ -401,6 +419,8 @@ export function DashboardProvider({ children, initialState = {} }) {
       currentAuditId,
       showPdfAudit,
       hidePdfAudit,
+      // Initialization tracking
+      isInitialized,
       // Stage 1: Coordinator Backend Integration
       transactions,
       coordinatorData,
@@ -420,6 +440,8 @@ export function DashboardProvider({ children, initialState = {} }) {
       updatePayoutStatus,
     }),
     [
+      // Initialization tracking
+      isInitialized,
       commissions,
       agentPlans,
       marketData,
