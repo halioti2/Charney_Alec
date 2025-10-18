@@ -98,12 +98,10 @@ export function DashboardProvider({ children, initialState = {} }) {
   const refetchCoordinatorData = useCallback(async () => {
     setIsRefreshing(true);
     try {
-      console.log('Fetching transactions from Supabase...');
+      console.log('Fetching coordinator data...');
       const rawTransactions = await fetchTransactions();
-      console.log('Raw transactions:', rawTransactions);
       const transformedTransactions = transformTransactionsForUI(rawTransactions);
-      console.log('Transformed transactions:', transformedTransactions);
-      console.log('🎯 Setting coordinator state with', transformedTransactions.length, 'transactions');
+      console.log('Setting coordinator state with', transformedTransactions.length, 'transactions');
       setTransactions(transformedTransactions);
       setCoordinatorData({ lastUpdated: new Date().toISOString() });
     } catch (error) {
@@ -117,7 +115,7 @@ export function DashboardProvider({ children, initialState = {} }) {
   const refetchPaymentData = useCallback(async () => {
     setIsRefreshingPayments(true);
     try {
-      console.log('Fetching payment data from Supabase...');
+      console.log('Fetching payment data...');
       
       // Fetch commission payouts
       const rawPayouts = await fetchCommissionPayouts();
@@ -133,17 +131,10 @@ export function DashboardProvider({ children, initialState = {} }) {
         p => p.payout_amount > 0 // All payouts with valid amounts
       );
       
-      console.log('Raw payouts from Supabase:', rawPayouts);
-      console.log('Transformed payouts:', transformedPayouts);
-      console.log('Filtered payment queue data:', paymentQueueData);
-      console.log('Filtered payment history data:', paymentHistoryData);
-      console.log('💳 Setting payment state - Queue:', paymentQueueData.length, 'items, History:', paymentHistoryData.length, 'items');
-      
+      console.log('Setting payment state - Queue:', paymentQueueData.length, 'items, History:', paymentHistoryData.length, 'items');
       setPaymentData(paymentQueueData);
       setPaymentHistory(paymentHistoryData);
       
-      console.log('Payment queue data:', paymentQueueData);
-      console.log('Payment history data:', paymentHistoryData);
     } catch (error) {
       console.error('Failed to refresh payment data:', error);
     } finally {
@@ -327,23 +318,23 @@ export function DashboardProvider({ children, initialState = {} }) {
     let currentSubscriptions = [];
 
     const setupData = async () => {
-      console.log('🚀 DashboardContext: Setting up initial data and subscriptions...');
+      console.log('Setting up initial data and subscriptions...');
       
       // Small delay to ensure supabase client is fully initialized
       await new Promise(resolve => setTimeout(resolve, 100));
       
-      // Initial fetch for both coordinator and payments data
-      console.log('📊 DashboardContext: Starting initial coordinator data fetch...');
-      await refetchCoordinatorData();
-      console.log('✅ DashboardContext: Coordinator data fetch completed');
-      
-      console.log('💰 DashboardContext: Starting initial payment data fetch...');
-      await refetchPaymentData();
-      console.log('✅ DashboardContext: Payment data fetch completed');
-      
-      // Mark as initialized after both data fetches complete
-      setIsInitialized(true);
-      console.log('🎉 DashboardContext: Initial data loading completed - context ready!');
+      try {
+        // Initial fetch for both coordinator and payments data
+        await refetchCoordinatorData();
+        await refetchPaymentData();
+        
+        // Mark as initialized after both data fetches complete
+        setIsInitialized(true);
+        console.log('Initial data loading completed');
+        
+      } catch (error) {
+        console.error('Error in setupData:', error);
+      }
 
       // Setup subscriptions (shared for both coordinator and payments)
       const transactionSub = subscribeToTransactions(() => {
