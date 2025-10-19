@@ -29,7 +29,7 @@ export function DashboardProvider({ children, initialState = {} }) {
     agentPlans: initialAgentPlans,
     marketData: initialMarketData,
     theme: initialTheme,
-    activeView: initialActiveView = 'broker',
+    activeView: initialActiveView = 'coordinator',
     activeCommissionId: initialActiveCommissionId = null,
     modalFocus: initialModalFocus = 'full',
     panelAgent: initialPanelAgent = null,
