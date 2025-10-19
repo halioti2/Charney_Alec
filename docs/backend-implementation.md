@@ -257,6 +257,28 @@ const subscribeToTransactionUpdates = () => {
 
 **Result:** PDF audit view now shows complete commission breakdown and plan defaults, matching the commission modal functionality while maintaining tab separation.
 
+#### **Stage 2.13: Agent Net Payout Display Fix (IN PROGRESS)**
+**Issue Identified:** Commission Queue, Payout Queue, and Payout History are displaying gross commission income ($25,000) instead of the actual agent net payout ($18,400) calculated in PDF audit view.
+
+**Root Cause Analysis:**
+- **RPC Function**: `create_commission_payout` uses simplified calculation: `Sale Price × Commission % × Agent Split %`
+- **PDF Audit View**: Uses detailed calculation with deductions: `(GCI - Referral Fee - Franchise Fee) × Agent Split % - E&O Fee - Transaction Fee`
+- **Data Transformation**: `transformTransactionsForUI` was using simplified calculation, not accounting for plan-specific deductions
+
+**Affected Components:**
+- ❌ **Commission Queue**: Shows $25,000 instead of $18,400 (using `transaction.agentPayout`)
+- ❌ **Payout Queue**: Shows $25,000 instead of $18,400 (using `payout.payout_amount`)
+- ❌ **Payout History**: Shows $25,000 instead of $18,400 (using `payout.payout_amount`)
+- ✅ **PDF Audit View**: Correctly shows $18,400 (using `calculateCommission` function)
+
+**Changes Made:**
+- [X] **Updated `transformTransactionsForUI`**: Now uses `calculateCommission` from `dashboardData.js` with agent plan data for accurate net payout calculation
+- [X] **Enhanced fallback logic**: Handles cases where agent is not found in plan data
+- [ ] **TODO: Update RPC function**: `create_commission_payout` needs to use the same detailed calculation logic
+- [ ] **TODO: Verify payout creation**: Ensure new payouts use correct net amounts
+
+**Expected Result:** All views should display consistent agent net payout amounts of $18,400 for Jessica Wong transaction.
+
 #### **Stage 2.12.1: PDF Audit Layout Optimization (COMPLETED)**
 **Scope:** Optimize PDF audit layout by repositioning commission components and temporarily disabling PDF preview
 

@@ -135,30 +135,58 @@ export function subscribeToCommissionEvidences(callback) {
  * @param {Array} transactions - Raw transactions from Supabase
  * @returns {Array} Transformed transactions for components
  */
+// Import for proper commission calculation
+import { calculateCommission, createAgentPlans } from './dashboardData.js';
+
 export function transformTransactionsForUI(transactions) {
+  const agentPlans = createAgentPlans();
+  
   return transactions.map((transaction) => {
     const evidence = transaction.commission_evidences?.[0];
     const extractionData = evidence?.extraction_data || {};
 
-    // Calculate total commission and agent payout
+    // Get transaction data with fallbacks
     const salePrice = transaction.final_sale_price || extractionData.sale_price || 0;
     const commissionRate = transaction.final_listing_commission_percent || 
                           extractionData.listing_side_commission_percent || 
                           3.0;
-    const agentSplit = transaction.final_agent_split_percent || 
-                      extractionData.agent_split_percent || 
-                      100;
+    const agentName = transaction.final_broker_agent_name || extractionData.broker_agent_name || 'Unknown Agent';
+    
+    // Calculate proper agent net payout using the same logic as PDF audit
+    let agentPayout = 0;
+    let totalCommission = salePrice * (commissionRate / 100);
+    
+    if (agentPlans[agentName]) {
+      const dealData = {
+        salePrice: salePrice,
+        grossCommissionRate: commissionRate,
+        referralFeePct: 0 // No referral fee in this transaction
+      };
+      
+      const calculation = calculateCommission(dealData, agentPlans[agentName]);
+      agentPayout = calculation.agentNet;
+      totalCommission = calculation.gci;
+    } else {
+      // Fallback for unknown agents - use simple calculation
+      const agentSplit = transaction.final_agent_split_percent || 
+                        extractionData.agent_split_percent || 
+                        70; // Default split
+      agentPayout = totalCommission * (agentSplit / 100);
+    }
 
-    const totalCommission = salePrice * (commissionRate / 100);
-    const agentPayout = totalCommission * (agentSplit / 100);
+    // Get agent split percentage for display
+    const agentSplitPercent = agentPlans[agentName]?.primarySplit?.agent || 
+                             transaction.final_agent_split_percent || 
+                             extractionData.agent_split_percent || 
+                             70;
 
     return {
       id: transaction.id,
-      broker: transaction.final_broker_agent_name || extractionData.broker_agent_name || 'Unknown Agent',
+      broker: agentName,
       propertyAddress: transaction.property_address || extractionData.property_address || 'Unknown Property',
       salePrice: salePrice,
       grossCommissionRate: commissionRate,
-      agentSplitPercent: agentSplit,
+      agentSplitPercent: agentSplitPercent,
       totalCommission: totalCommission,
       agentPayout: agentPayout,
       status: getUIStatus(transaction),
