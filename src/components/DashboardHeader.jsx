@@ -37,7 +37,6 @@ export default function DashboardHeader() {
       </div>
       <nav className="view-toggle flex items-center space-x-2">
         {[
-          { id: 'broker', label: 'Broker' },
           { id: 'coordinator', label: 'Coordinator' },
           { id: 'payments', label: 'Payments' },
           { id: 'commission', label: 'Commission Tracker' },
