@@ -169,22 +169,85 @@ INSERT INTO transaction_events (
 
 ### 2. Netlify Function Integration
 
-#### **JavaScript Call Pattern**
+#### **Frontend to Netlify Function Call Pattern**
 ```javascript
-const { data, error } = await supabase.rpc('create_commission_payout', {
-  p_transaction_id: transactionId
+// Frontend calls Netlify function (recommended approach)
+const response = await fetch('/.netlify/functions/approve-transaction', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${userToken}` // User authentication
+  },
+  body: JSON.stringify({
+    transactionId: transactionId,
+    approvedBy: userId
+  })
 });
 
-if (error) {
-  console.error('Payout creation failed:', error.message);
-  return { success: false, error: error.message };
+const result = await response.json();
+
+if (!result.success) {
+  console.error('Transaction approval failed:', result.error);
+  return { success: false, error: result.error };
 }
 
 return { 
   success: true, 
-  payout: data[0],
-  message: 'Payout created successfully'
+  transaction: result.transaction,
+  payout: result.payout,
+  message: 'Transaction approved and payout created'
 };
+```
+
+#### **Netlify Function to RPC Call Pattern**
+```javascript
+// Inside netlify/functions/approve-transaction.js
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY // Server-side service role
+);
+
+export async function handler(event, context) {
+  try {
+    const { transactionId } = JSON.parse(event.body);
+    
+    // Call the RPC function with service role privileges
+    const { data, error } = await supabase.rpc('create_commission_payout', {
+      p_transaction_id: transactionId
+    });
+
+    if (error) {
+      console.error('Payout creation failed:', error.message);
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ 
+          success: false, 
+          error: error.message 
+        })
+      };
+    }
+
+    return {
+      statusCode: 200,
+      body: JSON.stringify({ 
+        success: true, 
+        payout: data[0],
+        message: 'Payout created successfully'
+      })
+    };
+  } catch (error) {
+    console.error('Function error:', error);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ 
+        success: false, 
+        error: 'Internal server error' 
+      })
+    };
+  }
+}
 ```
 
 ## Error Handling Patterns
@@ -208,9 +271,10 @@ return {
 - **Send notification to payments team**
 
 #### **Netlify Functions**
-- **Non-blocking payout creation** (transaction approval succeeds regardless)
-- **Return payout error in response** (don't throw exceptions)
-- **Trigger manual payout creation workflow**
+- **Secure server-side operations** (transaction approval succeeds regardless of payout errors)
+- **Return structured error responses** (don't throw exceptions to frontend)
+- **Create audit trails** for all operations (success and failure)
+- **Trigger manual payout creation workflows** for failed automatic attempts
 
 ## Testing Scenarios
 

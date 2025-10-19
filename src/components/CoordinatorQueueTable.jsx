@@ -10,61 +10,78 @@ const statusColors = {
 };
 
 const CoordinatorQueueTable = () => {
-  const { commissions, showPdfAudit } = useDashboardContext();
+  const { transactions, showPdfAudit, isRefreshing } = useDashboardContext();
   const [isExpanded, setIsExpanded] = useState(false);
+
+  // Debug logging
+  console.log('CoordinatorQueueTable - transactions:', transactions);
+  console.log('CoordinatorQueueTable - isRefreshing:', isRefreshing);
 
   const rows = useMemo(
     () =>
-      commissions.map((commission) => ({
-        ...commission,
-        totalCommission: commission.salePrice * (commission.grossCommissionRate / 100),
-        statusClass: statusColors[commission.status] ?? 'bg-gray-100 text-gray-800',
+      transactions.map((transaction) => ({
+        ...transaction,
+        // Use the pre-calculated agent payout amount that matches RPC calculation
+        displayAmount: transaction.agentPayout || 0,
+        statusClass: statusColors[transaction.status] ?? 'bg-gray-100 text-gray-800',
       })),
-    [commissions],
+    [transactions],
   );
 
   const displayedRows = isExpanded ? rows : rows.slice(0, 10);
 
-  const handleProcessClick = (e, commissionId) => {
+  const handleProcessClick = (e, transaction) => {
     e.preventDefault();
     e.stopPropagation();
-    showPdfAudit(commissionId);
+    // Pass the transaction ID for verification modal
+    showPdfAudit(transaction.id);
   };
 
   return (
     <div className="card p-6">
-      <h3 className="mb-4 text-2xl font-black tracking-tighter">
-        Commission <span className="text-charney-red">Queue</span>
-      </h3>
+      <div className="mb-4 flex items-center justify-between">
+        <h3 className="text-2xl font-black tracking-tighter">
+          Commission <span className="text-charney-red">Queue</span>
+          <span className="ml-2 text-sm font-normal text-gray-500">
+            ({transactions.length} transactions)
+          </span>
+        </h3>
+        <button
+          onClick={() => window.location.reload()}
+          className="rounded bg-charney-red px-3 py-1 text-sm text-white hover:bg-charney-red/90"
+        >
+          Refresh Page
+        </button>
+      </div>
       <div className="overflow-x-auto" role="region" aria-label="Commission queue">
         <table className="w-full text-left text-sm">
           <thead className="text-xs uppercase">
             <tr>
               <th className="p-4">Agent</th>
               <th className="p-4">Property</th>
-              <th className="p-4">Total Commission</th>
+              <th className="p-4">Agent Payout</th>
               <th className="p-4">Status</th>
               <th className="p-4">Action</th>
             </tr>
           </thead>
           <tbody>
-            {displayedRows.map((commission) => (
+            {displayedRows.map((transaction) => (
               <tr
-                key={commission.id}
+                key={transaction.id}
                 className="hover:bg-charney-cream/50 dark:hover:bg-charney-cream/10"
               >
-                <td className="p-4">{commission.broker}</td>
-                <td className="p-4">{commission.propertyAddress}</td>
-                <td className="p-4">{formatCurrency(commission.totalCommission)}</td>
+                <td className="p-4">{transaction.broker}</td>
+                <td className="p-4">{transaction.propertyAddress}</td>
+                <td className="p-4">{formatCurrency(transaction.displayAmount)}</td>
                 <td className="p-4">
-                  <span className={`rounded-full px-2 py-1 text-xs ${commission.statusClass}`}>
-                    {commission.status}
+                  <span className={`rounded-full px-2 py-1 text-xs ${transaction.statusClass}`}>
+                    {transaction.status}
                   </span>
                 </td>
                 <td className="p-4">
                   <button
                     type="button"
-                    onClick={(e) => handleProcessClick(e, commission.id)}
+                    onClick={(e) => handleProcessClick(e, transaction)}
                     className="rounded bg-charney-red px-4 py-2 text-sm font-medium text-white hover:bg-charney-red/90 transition-colors"
                   >
                     Process

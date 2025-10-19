@@ -81,6 +81,16 @@ related_docs: PDF Extractor UI (Ashley), Payment UI (Erica), Commission Viz UI (
 ---
 
 ## ✅ Key Requirements
+### PDF Intake Branches
+
+We maintain two execution paths for the MVP (see `docs/parse-pdf-user-journey.md` for detailed choreography):
+
+| Path | Summary | Implementation Phase |
+| ---- | ------- | -------------------- |
+| **Path A – Auto-Approval** | Fully automated happy path used in the live demo. n8n promotes evidence data directly into `transactions.final_*`, moving `status` from `in_queue → in_review → approved` with zero coordinator interaction. | Backend Implementation Phase 1A |
+| **Path B – Manual Verification** | Production flow. n8n stops at `needs_review`; the coordinator opens the verification modal, reviews evidence, and submits to finalize `transactions.final_*`. | Backend Implementation Phase 1B |
+
+Both paths follow the hybrid data strategy: realtime for queue inserts/updates, `DashboardContext` polling for aggregates, and modal fetch-on-open for evidence.
 
 ### PDF Field Extraction
 
