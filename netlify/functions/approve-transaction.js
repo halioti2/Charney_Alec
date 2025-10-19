@@ -111,15 +111,14 @@ export async function handler(event) {
 
     if (eventError) throw eventError;
 
-    // STEP 6: AUTOMATIC PAYOUT CREATION VIA RPC
-    // This integrates with the commission payout RPC function created in Stage 2.1
-    // The RPC function handles all business logic: validation, calculation, and audit trail
+    // STEP 6: ENHANCED PAYOUT CREATION VIA UPDATED RPC
+    // The RPC function now includes proper net payout calculation with all deductions
     let payoutResult = null;
     let payoutError = null;
     let payoutWarning = null;
     
     try {
-      console.log(`🔄 Creating commission payout for transaction ${transaction_id}`);
+      console.log(`🔄 Creating enhanced commission payout for transaction ${transaction_id}`);
       
       const { data: payout, error: rpcError } = await userSupabase
         .rpc('create_commission_payout', { 
@@ -128,7 +127,6 @@ export async function handler(event) {
 
       if (rpcError) {
         // CATEGORIZED ERROR HANDLING: Different error types get different treatment
-        // This allows the frontend to handle various scenarios appropriately
         if (rpcError.message?.includes('already exists')) {
           payoutWarning = 'Payout already exists for this transaction';
           console.log(`⚠️ Payout already exists for transaction ${transaction_id}`);
@@ -139,8 +137,8 @@ export async function handler(event) {
           payoutError = 'Transaction must be approved before creating payout';
           console.error(`❌ Transaction ${transaction_id} not approved for payout`);
         } else {
-          payoutError = `Payout creation failed: ${rpcError.message}`;
-          console.error(`❌ Payout creation failed for ${transaction_id}:`, rpcError.message);
+          payoutError = `Enhanced payout creation failed: ${rpcError.message}`;
+          console.error(`❌ Enhanced payout creation failed for ${transaction_id}:`, rpcError.message);
         }
         
         // AUDIT TRAIL: Log all payout failures for debugging and compliance
@@ -154,6 +152,7 @@ export async function handler(event) {
             metadata: {
               error: rpcError.message,
               error_code: rpcError.code || 'UNKNOWN',
+              rpc_version: '2.0_enhanced',
               attempted_at: new Date().toISOString()
             },
             visible_to_agent: false
@@ -161,19 +160,22 @@ export async function handler(event) {
           
       } else {
         payoutResult = payout?.[0] || null;
-        console.log(`✅ Commission payout created:`, payoutResult);
+        console.log(`✅ Enhanced commission payout created:`, payoutResult);
         
-        // AUDIT TRAIL: Log successful payout creation
+        // AUDIT TRAIL: Log successful payout creation with enhanced details
         await userSupabase
           .from('transaction_events')
           .insert({
             transaction_id: transaction_id,
             event_type: 'payout_created',
-            actor_name: 'System',
+            actor_name: user.email,
+            actor_id: user.id,
             metadata: {
               payout_id: payoutResult?.payout_id,
               payout_amount: payoutResult?.amount,
-              created_via: 'manual_approval'
+              calculation_method: payoutResult?.calculation_method,
+              rpc_version: '2.0_enhanced',
+              created_via: 'manual_approval_rpc'
             },
             visible_to_agent: true
           });

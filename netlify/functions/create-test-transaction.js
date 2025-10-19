@@ -138,13 +138,13 @@ export async function handler(event, context) {
 
     if (eventError) throw eventError;
 
-    // 4. For phase1a (approved), create commission payout using RPC function
+        // 4. For phase1a (approved), create commission payout using enhanced RPC
     let payoutResult = null;
     let payoutError = null;
     
     if (test_type === 'phase1a') {
       try {
-        console.log(`🔄 Creating commission payout for approved test transaction ${transaction.id}`);
+        console.log(`🔄 Creating enhanced commission payout for approved test transaction ${transaction.id}`);
         
         const { data: payout, error: rpcError } = await userSupabase
           .rpc('create_commission_payout', { 
@@ -152,15 +152,15 @@ export async function handler(event, context) {
           });
 
         if (rpcError) {
-          console.error('⚠️ Test payout creation failed:', rpcError.message);
+          console.error('⚠️ Enhanced test payout creation failed:', rpcError.message);
           payoutError = rpcError.message;
         } else {
           payoutResult = payout?.[0] || null;
-          console.log(`✅ Test commission payout created:`, payoutResult);
+          console.log(`✅ Enhanced commission payout created:`, payoutResult);
         }
-      } catch (rpcErr) {
-        console.error('⚠️ Test payout creation exception:', rpcErr.message);
-        payoutError = rpcErr.message;
+      } catch (payoutErr) {
+        console.error('⚠️ Enhanced payout creation exception:', payoutErr.message);
+        payoutError = payoutErr.message;
       }
     }
 
