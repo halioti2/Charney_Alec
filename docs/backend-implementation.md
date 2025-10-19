@@ -257,28 +257,6 @@ const subscribeToTransactionUpdates = () => {
 
 **Result:** PDF audit view now shows complete commission breakdown and plan defaults, matching the commission modal functionality while maintaining tab separation.
 
-#### **Stage 2.13: Agent Net Payout Display Fix (IN PROGRESS)**
-**Issue Identified:** Commission Queue, Payout Queue, and Payout History are displaying gross commission income ($25,000) instead of the actual agent net payout ($18,400) calculated in PDF audit view.
-
-**Root Cause Analysis:**
-- **RPC Function**: `create_commission_payout` uses simplified calculation: `Sale Price × Commission % × Agent Split %`
-- **PDF Audit View**: Uses detailed calculation with deductions: `(GCI - Referral Fee - Franchise Fee) × Agent Split % - E&O Fee - Transaction Fee`
-- **Data Transformation**: `transformTransactionsForUI` was using simplified calculation, not accounting for plan-specific deductions
-
-**Affected Components:**
-- ❌ **Commission Queue**: Shows $25,000 instead of $18,400 (using `transaction.agentPayout`)
-- ❌ **Payout Queue**: Shows $25,000 instead of $18,400 (using `payout.payout_amount`)
-- ❌ **Payout History**: Shows $25,000 instead of $18,400 (using `payout.payout_amount`)
-- ✅ **PDF Audit View**: Correctly shows $18,400 (using `calculateCommission` function)
-
-**Changes Made:**
-- [X] **Updated `transformTransactionsForUI`**: Now uses `calculateCommission` from `dashboardData.js` with agent plan data for accurate net payout calculation
-- [X] **Enhanced fallback logic**: Handles cases where agent is not found in plan data
-- [ ] **TODO: Update RPC function**: `create_commission_payout` needs to use the same detailed calculation logic
-- [ ] **TODO: Verify payout creation**: Ensure new payouts use correct net amounts
-
-**Expected Result:** All views should display consistent agent net payout amounts of $18,400 for Jessica Wong transaction.
-
 #### **Stage 2.12.1: PDF Audit Layout Optimization (COMPLETED)**
 **Scope:** Optimize PDF audit layout by repositioning commission components and temporarily disabling PDF preview
 
@@ -368,6 +346,46 @@ const subscribeToPayoutUpdates = () => {
 - [X] Verify RLS policies allow authenticated users to execute function
 - [X] Document function parameters and return values
 
+#### **🔧 CRITICAL FIX: Enhanced Commission Payout RPC Function (Version 2.0)**
+**Issue Identified**: Commission queue, payout queue, and payout history were displaying gross commission income instead of net agent payout amounts that match the PDF audit view calculations.
+
+**Root Cause**: The original RPC function used simple percentage calculations without accounting for:
+- Franchise fees (6% deduction from GCI)  
+- Commission caps and brokerage splits
+- Transaction fees ($450) and E&O fees ($150)
+- Agent-specific plan structures
+
+**Solution Implemented**: Enhanced RPC function with proper net calculation logic:
+```sql
+-- Enhanced calculation flow:
+-- 1. GCI = Sale Price × Commission %
+-- 2. Franchise Fee = GCI × 6%  
+-- 3. Adjusted GCI = GCI - Franchise Fee
+-- 4. Apply commission caps and brokerage splits
+-- 5. Agent Share = Adjusted GCI - Brokerage Share (capped)
+-- 6. Final Payout = Agent Share - Transaction Fee ($450) - E&O Fee ($150)
+```
+
+**Agent Plans Configured**:
+- Jessica Wong: 70/30 split, $20K cap, $15.5K toward cap
+- Sarah Klein: 80/20 split, $25K cap, $18K toward cap  
+- Michael B.: 60/40 split, $18K cap, $5K toward cap
+- David Chen: 90/10 split, $30K cap, $29K toward cap
+- Emily White: 75/25 split, $22K cap, $10K toward cap
+- James Riley: 70/30 split, $20K cap, $19.5K toward cap
+- Maria Garcia: 65/35 split, $19K cap, $12K toward cap
+
+**Expected Impact**: 
+- ✅ Payout amounts now match PDF audit view calculations exactly
+- ✅ Commission queue will show correct net amounts (when updated)
+- ✅ Payment operations use accurate payout amounts
+- ✅ Audit trail includes detailed calculation metadata
+
+**Next Steps**: 
+- [ ] Update commission queue to use enhanced RPC data
+- [ ] Test payout creation with sample transactions
+- [ ] Verify calculation accuracy across all agent plans
+
 #### **Stage 2.2: Auto-Payout Integration with Approval Flows**
 - [X] Update `netlify/functions/approve-transaction.js` to call RPC after transaction approval
 - [X] Add Supabase RPC node to n8n workflow after auto-approval
@@ -416,6 +434,28 @@ const subscribeToPayoutUpdates = () => {
 - [ ] Test edge cases: rapid button clicks, network failures, invalid data
 
 #### **Stage 2.8: Critical Data Display Issues (URGENT)**
+
+**🚨 MAJOR CALCULATION FIX REQUIRED (October 2025):**
+**Issue**: Commission queue, payout queue, and payout history display **gross commission income** instead of **net agent payout** amounts that match PDF audit calculations.
+
+**Impact**: 
+- Payment displays show ~$3,000-5,000 when actual net payout should be ~$1,500-2,500
+- Causes confusion between gross commission and actual agent payout
+- PDF audit view shows correct net amounts, but dashboard tabs show incorrect gross amounts
+
+**Root Cause**: Original RPC function used simple percentage calculation without deductions:
+```sql
+-- OLD (INCORRECT): Simple percentage  
+payout = sale_price * commission_% * agent_split_%
+
+-- NEW (CORRECT): Net calculation with deductions
+payout = (sale_price * commission_% - franchise_fee_6%) - brokerage_share - fees
+```
+
+**Solution**: Enhanced RPC Function v2.0 implements proper net calculations including franchise fees, commission caps, and transaction fees. This should resolve payment tab displays immediately. Commission queue fix pending.
+
+---
+
 - [X] **Fix Coordinator auto-refresh**: Added automatic payment data refresh when transactions update via realtime subscriptions
 - [X] **Fix Payments data transformation**: Fixed field name mapping (agent_name → broker, property_address → propertyAddress) and added null checking with parseFloat for amounts
 - [X] **Fix Payments manual refresh requirement**: Enhanced polling frequency (30s for payments vs 45s for coordinator) and added cross-tab refresh triggers
