@@ -1,4 +1,5 @@
 import { supabase } from './supabaseClient.js';
+import { calculateCommission, createAgentPlans } from './dashboardData.js';
 
 /**
  * Fetch all transactions with their related commission evidences
@@ -135,9 +136,6 @@ export function subscribeToCommissionEvidences(callback) {
  * @param {Array} transactions - Raw transactions from Supabase
  * @returns {Array} Transformed transactions for components
  */
-// Import for proper commission calculation
-import { calculateCommission, createAgentPlans } from './dashboardData.js';
-
 export function transformTransactionsForUI(transactions) {
   const agentPlans = createAgentPlans();
   
