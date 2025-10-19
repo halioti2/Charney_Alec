@@ -64,6 +64,31 @@ export function DashboardProvider({ children, initialState = {} }) {
   
   // Track initialization state
   const [isInitialized, setIsInitialized] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  // Monitor authentication state
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setIsAuthenticated(!!session);
+      
+      if (session) {
+        console.log('Authentication confirmed, user logged in');
+      } else {
+        console.log('No active session detected');
+      }
+    };
+
+    checkAuth();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('Auth state changed:', event, !!session);
+      setIsAuthenticated(!!session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   useEffect(() => {
     if (typeof document === 'undefined') return;
@@ -315,13 +340,19 @@ export function DashboardProvider({ children, initialState = {} }) {
 
   // Initial data fetch and subscription setup
   useEffect(() => {
+    // Only proceed if user is authenticated
+    if (!isAuthenticated) {
+      console.log('Waiting for authentication before setting up data...');
+      return;
+    }
+
     let currentSubscriptions = [];
 
     const setupData = async () => {
       console.log('Setting up initial data and subscriptions...');
       
-      // Small delay to ensure supabase client is fully initialized
-      await new Promise(resolve => setTimeout(resolve, 100));
+      // Longer delay to ensure authentication is fully settled
+      await new Promise(resolve => setTimeout(resolve, 500));
       
       try {
         // Initial fetch for both coordinator and payments data
@@ -357,7 +388,7 @@ export function DashboardProvider({ children, initialState = {} }) {
     return () => {
       currentSubscriptions.forEach(sub => sub.unsubscribe());
     };
-  }, [refetchCoordinatorData, refetchPaymentData]); // Include both dependencies
+  }, [isAuthenticated, refetchCoordinatorData, refetchPaymentData]); // Add isAuthenticated dependency
 
   // Polling for coordinator data (30-60s backup)
   useEffect(() => {
@@ -412,6 +443,7 @@ export function DashboardProvider({ children, initialState = {} }) {
       hidePdfAudit,
       // Initialization tracking
       isInitialized,
+      isAuthenticated,
       // Stage 1: Coordinator Backend Integration
       transactions,
       coordinatorData,
@@ -433,6 +465,7 @@ export function DashboardProvider({ children, initialState = {} }) {
     [
       // Initialization tracking
       isInitialized,
+      isAuthenticated,
       commissions,
       agentPlans,
       marketData,

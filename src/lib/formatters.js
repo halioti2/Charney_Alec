@@ -52,3 +52,20 @@ export function formatNumber(value, options = {}) {
   const numeric = Number.isFinite(value) ? value : 0;
   return new Intl.NumberFormat('en-US', options).format(numeric);
 }
+
+export function formatCurrencyAbbreviated(value) {
+  const numeric = Number.isFinite(value) ? value : 0;
+
+  if (numeric >= 1000000) {
+    return `$${(numeric / 1000000).toFixed(1)}M`;
+  }
+  if (numeric >= 1000) {
+    return `$${(numeric / 1000).toFixed(0)}K`;
+  }
+  return `$${numeric.toFixed(0)}`;
+}
+
+export function formatNumberAbbreviated(value) {
+  const numeric = Number.isFinite(value) ? value : 0;
+  return Math.round(numeric).toString();
+}

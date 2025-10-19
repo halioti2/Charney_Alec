@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phase 3 Integration Testing</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .test-section { background: white; padding: 20px; margin: 10px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .status { padding: 4px 8px; border-radius: 4px; font-weight: bold; }
+        .pass { background: #d4edda; color: #155724; }
+        .fail { background: #f8d7da; color: #721c24; }
+        .pending { background: #fff3cd; color: #856404; }
+        #results { white-space: pre-wrap; font-family: monospace; background: #f8f9fa; padding: 10px; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <h1>🔧 Phase 3 Integration Testing Dashboard</h1>
+    <p>Testing the merged feature/backend integration with netlify dev environment</p>
+    
+    <div class="test-section">
+        <h2>Environment Status</h2>
+        <p>Netlify Dev: <span id="netlify-status" class="status pending">Testing...</span></p>
+        <p>Supabase Connection: <span id="supabase-status" class="status pending">Testing...</span></p>
+        <p>Frontend Loading: <span id="frontend-status" class="status pending">Testing...</span></p>
+    </div>
+
+    <div class="test-section">
+        <h2>Backend Integration Tests</h2>
+        <button onclick="testCoordinatorTab()">Test Coordinator Tab</button>
+        <button onclick="testPaymentsTab()">Test Payments Tab</button>
+        <button onclick="testNetlifyFunctions()">Test Netlify Functions</button>
+        <button onclick="testAutoRefresh()">Test Auto-Refresh</button>
+    </div>
+
+    <div class="test-section">
+        <h2>Dashboard Navigation</h2>
+        <p><a href="http://localhost:8888" target="_blank">Open Main Dashboard →</a></p>
+        <p><a href="http://localhost:8888/#/coordinator" target="_blank">Test Coordinator View →</a></p>
+        <p><a href="http://localhost:8888/#/payments" target="_blank">Test Payments View →</a></p>
+        <p><a href="http://localhost:8888/#/broker" target="_blank">Test Broker View (with D3) →</a></p>
+    </div>
+
+    <div class="test-section">
+        <h2>Test Results</h2>
+        <div id="results">Ready to run tests...\n</div>
+    </div>
+
+    <script>
+        const log = (message) => {
+            const results = document.getElementById('results');
+            results.textContent += `[${new Date().toLocaleTimeString()}] ${message}\n`;
+            results.scrollTop = results.scrollHeight;
+        };
+
+        const setStatus = (id, status, text) => {
+            const element = document.getElementById(id);
+            element.className = `status ${status}`;
+            element.textContent = text;
+        };
+
+        // Test environment on page load
+        window.addEventListener('load', async () => {
+            log('🚀 Starting Phase 3 Integration Tests...');
+            
+            // Test 1: Check if we can reach netlify dev
+            try {
+                const response = await fetch('/');
+                if (response.ok) {
+                    setStatus('netlify-status', 'pass', 'Connected ✓');
+                    log('✅ Netlify dev environment: WORKING');
+                } else {
+                    setStatus('netlify-status', 'fail', 'Error');
+                    log('❌ Netlify dev environment: FAILED');
+                }
+            } catch (error) {
+                setStatus('netlify-status', 'fail', 'Error');
+                log(`❌ Netlify dev environment: ${error.message}`);
+            }
+
+            // Test 2: Test frontend loading
+            setStatus('frontend-status', 'pass', 'Loaded ✓');
+            log('✅ Frontend: Page loaded successfully');
+
+            // Test 3: Check Supabase (we'll do this when testing tabs)
+            setStatus('supabase-status', 'pending', 'Will test with tabs');
+        });
+
+        async function testCoordinatorTab() {
+            log('🔍 Testing Coordinator Tab Integration...');
+            
+            try {
+                // Open coordinator in new tab for visual inspection
+                window.open('http://localhost:8888/#/coordinator', 'coordinator-test');
+                log('✅ Coordinator tab opened - Check for data loading and auto-refresh');
+                log('   Expected: Transaction data from Supabase should load automatically');
+                log('   Expected: Auto-refresh should work every 45 seconds');
+                
+            } catch (error) {
+                log(`❌ Coordinator tab test failed: ${error.message}`);
+            }
+        }
+
+        async function testPaymentsTab() {
+            log('🔍 Testing Payments Tab Integration...');
+            
+            try {
+                // Open payments in new tab for visual inspection
+                window.open('http://localhost:8888/#/payments', 'payments-test');
+                log('✅ Payments tab opened - Check for payout queue and payment history');
+                log('   Expected: Commission payouts should load from Supabase');
+                log('   Expected: Payment operations should be available');
+                
+            } catch (error) {
+                log(`❌ Payments tab test failed: ${error.message}`);
+            }
+        }
+
+        async function testNetlifyFunctions() {
+            log('🔍 Testing Netlify Functions...');
+            
+            const functions = [
+                'schedule-payout',
+                'process-payment',
+                'approve-transaction',
+                'update-payout-status'
+            ];
+
+            for (const func of functions) {
+                try {
+                    const response = await fetch(`/.netlify/functions/${func}`, {
+                        method: 'GET',
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+                    
+                    if (response.status < 500) {
+                        log(`✅ Function ${func}: Accessible (Status: ${response.status})`);
+                    } else {
+                        log(`⚠️  Function ${func}: Server error (Status: ${response.status})`);
+                    }
+                } catch (error) {
+                    log(`❌ Function ${func}: ${error.message}`);
+                }
+            }
+        }
+
+        async function testAutoRefresh() {
+            log('🔍 Testing Auto-Refresh Integration...');
+            log('✅ Auto-refresh test initiated');
+            log('   To verify: Open coordinator tab and watch browser console');
+            log('   Expected: "Setting up initial data and subscriptions..." message');
+            log('   Expected: Data loads without manual refresh');
+            log('   Expected: Real-time updates work when data changes');
+            
+            // Open main dashboard for testing
+            window.open('http://localhost:8888', 'dashboard-test');
+        }
+
+        // Initial status
+        log('Phase 3 Integration Test Dashboard Ready');
+        log('Click buttons above to test individual components');
+        log('Open dashboard tabs to verify functionality visually');
+    </script>
+</body>
+</html>

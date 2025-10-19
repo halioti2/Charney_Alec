@@ -10,12 +10,17 @@ const statusColors = {
 };
 
 const CoordinatorQueueTable = () => {
-  const { transactions, showPdfAudit, isRefreshing } = useDashboardContext();
+  const { transactions, showPdfAudit, isRefreshing, isAuthenticated, isInitialized } = useDashboardContext();
   const [isExpanded, setIsExpanded] = useState(false);
 
-  // Debug logging
-  console.log('CoordinatorQueueTable - transactions:', transactions);
-  console.log('CoordinatorQueueTable - isRefreshing:', isRefreshing);
+  // Enhanced debug logging
+  console.log('CoordinatorQueueTable Debug:', {
+    transactionCount: transactions?.length || 0,
+    isRefreshing,
+    isAuthenticated,
+    isInitialized,
+    hasTransactions: Array.isArray(transactions) && transactions.length > 0
+  });
 
   const rows = useMemo(
     () =>
@@ -36,6 +41,27 @@ const CoordinatorQueueTable = () => {
     // Pass the transaction ID for verification modal
     showPdfAudit(transaction.id);
   };
+
+  // Show loading/auth states after hooks
+  if (!isAuthenticated) {
+    return (
+      <div className="card p-6">
+        <div className="text-center text-gray-500">
+          <p>🔐 Waiting for authentication...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isInitialized) {
+    return (
+      <div className="card p-6">
+        <div className="text-center text-gray-500">
+          <p>⏳ Loading transaction data...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="card p-6">
