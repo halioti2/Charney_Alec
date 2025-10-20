@@ -6,8 +6,6 @@ import DealSheetViewer from '../components/DealSheetViewer.jsx';
 import ConfidenceBadge from '../components/ConfidenceBadge.jsx';
 import PdfAuditCommissionDisplay from '../components/PdfAuditCommissionDisplay.jsx';
 
-const checklistItemsConfig = ["Contract of Sale", "Invoice", "Disclosure Forms"];
-
 const PdfAuditCard = () => {
   const { isPdfAuditVisible, currentAuditId, hidePdfAudit, refetchCoordinatorData } = useDashboardContext();
   const [isSubmitDisabled, setIsSubmitDisabled] = useState(true);
@@ -21,7 +19,6 @@ const PdfAuditCard = () => {
     final_co_broker_agent_name: '',
     final_co_brokerage_firm_name: ''
   });
-  const [checklistResponses, setChecklistResponses] = useState({});
   const [transactionData, setTransactionData] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -55,13 +52,6 @@ const PdfAuditCard = () => {
             console.log('Final form data:', formInitData);
             
             setFormData(formInitData);
-
-            // Initialize checklist
-            const initialChecklist = {};
-            checklistItemsConfig.forEach(item => {
-              initialChecklist[item] = false;
-            });
-            setChecklistResponses(initialChecklist);
           }
         })
         .catch(error => {
@@ -77,21 +67,15 @@ const PdfAuditCard = () => {
   useEffect(() => {
     const requiredFields = ['final_broker_agent_name', 'property_address', 'final_sale_price'];
     const isFormValid = requiredFields.every(field => formData[field]?.toString().trim());
-    const allItemsChecked = checklistItemsConfig.every(item => checklistResponses[item]);
-    setIsSubmitDisabled(!(isFormValid && allItemsChecked));
-  }, [formData, checklistResponses]);
+    setIsSubmitDisabled(!isFormValid);
+  }, [formData]);
 
   const handleFormChange = (e) => {
     const { name, value } = e.target;
     setFormData(prevData => ({ ...prevData, [name]: value }));
   };
 
-  const handleChecklistChange = (item, checked) => {
-    setChecklistResponses(prev => ({
-      ...prev,
-      [item]: checked
-    }));
-  };
+
 
   const handleSubmit = async () => {
     if (!transactionData || !currentAuditId || isSubmitDisabled || isSubmitting) {
@@ -115,7 +99,6 @@ const PdfAuditCard = () => {
       };
 
       console.log("Cleaned Form Data:", cleanedFormData);
-      console.log("Checklist Responses:", checklistResponses);
       
       // Get current session for auth token
       const { data: { session } } = await supabase.auth.getSession();
@@ -130,8 +113,7 @@ const PdfAuditCard = () => {
         },
         body: JSON.stringify({
           transaction_id: currentAuditId,
-          final_data: cleanedFormData,
-          checklist_responses: checklistResponses
+          final_data: cleanedFormData
         })
       });
 
@@ -294,23 +276,7 @@ const PdfAuditCard = () => {
                   </div>
                 </div>
 
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">Document Checklist</h3>
-                  {checklistItemsConfig.map((item) => (
-                    <div key={item} className="flex items-center">
-                      <input
-                        type="checkbox"
-                        id={item}
-                        checked={checklistResponses[item] || false}
-                        onChange={(e) => handleChecklistChange(item, e.target.checked)}
-                        className="h-4 w-4 text-charney-red focus:ring-charney-red border-gray-300 rounded"
-                      />
-                      <label htmlFor={item} className="ml-2 text-sm">
-                        {item}
-                      </label>
-                    </div>
-                  ))}
-                </div>
+
 
                 <button
                   onClick={handleSubmit}
@@ -329,7 +295,7 @@ const PdfAuditCard = () => {
                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                       </svg>
                     )}
-                    <span>{isSubmitDisabled ? 'Complete All Items to Submit' : 'Submit for Approval'}</span>
+                    <span>{isSubmitDisabled ? 'Complete Required Fields to Submit' : 'Submit for Approval'}</span>
                   </span>
                   {isSubmitting && (
                     <span className="absolute inset-0 flex items-center justify-center">
