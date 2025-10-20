@@ -59,7 +59,16 @@ export default function SchedulePayoutModal({
     }
   };
 
-  const achEligibleCount = selectedItems.filter(item => item.auto_ach).length;
+  const achEligibleCount = selectedItems.filter(item => {
+    // Check if item is eligible for ACH based on multiple criteria
+    const hasValidAmount = (item.payout_amount || 0) > 0;
+    const isReadyStatus = item.status === 'ready' || item.status === 'scheduled';
+    const hasAgentInfo = item.broker && item.broker.trim() !== '';
+    
+    // For now, consider all valid payouts as ACH eligible
+    // In the future, this could check for specific agent ACH setup
+    return hasValidAmount && isReadyStatus && hasAgentInfo;
+  }).length;
   const hasIneligibleItems = selectedItems.length > achEligibleCount;
 
   if (!isOpen) return null;

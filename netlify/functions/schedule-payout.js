@@ -131,13 +131,20 @@ export async function handler(event) {
         }
 
         // Prepare update data based on actual table schema
+        // If auto_ach is true (Send immediately), mark as paid, otherwise scheduled
+        const finalStatus = auto_ach ? 'paid' : 'scheduled';
         const updateData = {
-          status: 'scheduled',
+          status: finalStatus,
           scheduled_at: scheduledAt.toISOString(),
           auto_ach: auto_ach || (payment_method === 'ach'),
           ach_provider: (payment_method === 'ach' && provider_details) ? provider_details.provider : null,
           ach_reference: (payment_method === 'ach' && provider_details) ? provider_details.reference : null
         };
+        
+        // If marking as paid via ACH, also set payment processed timestamp
+        if (auto_ach) {
+          updateData.paid_at = new Date().toISOString();
+        }
 
         console.log(`Scheduling payout ${payoutId} with data:`, updateData);
 
@@ -163,11 +170,12 @@ export async function handler(event) {
         }
 
         // Create audit trail event
+        const eventType = auto_ach ? 'payout_paid_ach' : 'payout_scheduled';
         const { error: eventError } = await userSupabase
           .from('transaction_events')
           .insert({
             transaction_id: existingPayout.transaction_id,
-            event_type: 'payout_scheduled',
+            event_type: eventType,
             actor_name: user.email,
             actor_id: user.id,
             metadata: {
@@ -177,9 +185,10 @@ export async function handler(event) {
               auto_ach: auto_ach || false,
               provider_details: provider_details,
               previous_status: existingPayout.status,
-              new_status: 'scheduled',
-              scheduled_by: user.email,
-              scheduled_at: now.toISOString()
+              new_status: finalStatus,
+              processed_by: user.email,
+              processed_at: now.toISOString(),
+              ...(auto_ach ? { paid_at: updateData.paid_at } : {})
             },
             visible_to_agent: true
           });
@@ -196,7 +205,7 @@ export async function handler(event) {
           scheduled_at: scheduledAt.toISOString()
         });
 
-        console.log(`✅ Payout ${payoutId} scheduled successfully`);
+        console.log(`✅ Payout ${payoutId} ${auto_ach ? 'paid via ACH' : 'scheduled'} successfully`);
 
       } catch (error) {
         console.error(`Failed to schedule payout ${payoutId}:`, error);
@@ -213,27 +222,27 @@ export async function handler(event) {
       throw new Error(`Failed to schedule any payouts. Errors: ${errors.map(e => e.error).join(', ')}`);
     }
     
-    console.log(`✅ Scheduled ${successCount} payout(s) successfully, ${errorCount} failed`);
+    console.log(`✅ ${auto_ach ? 'Processed' : 'Scheduled'} ${successCount} payout(s) successfully, ${errorCount} failed`);
 
     return { 
       statusCode: 200, 
       headers, 
       body: JSON.stringify({
         success: true,
-        scheduled_count: successCount,
+        processed_count: successCount,
         error_count: errorCount,
         results: results,
         errors: errors,
         message: errorCount > 0 
-          ? `Scheduled ${successCount} payout(s), ${errorCount} failed`
-          : `All ${successCount} payout(s) scheduled successfully for ${scheduledAt.toLocaleDateString()}`,
+          ? `${auto_ach ? 'Processed' : 'Scheduled'} ${successCount} payout(s), ${errorCount} failed`
+          : `All ${successCount} payout(s) ${auto_ach ? 'paid via ACH' : 'scheduled'} successfully for ${scheduledAt.toLocaleDateString()}`,
         details: {
           payout_ids: payoutIds,
           scheduled_date: scheduledAt.toISOString(),
           payment_method: payment_method,
           auto_ach: auto_ach || false,
           total_amount: results.reduce((sum, r) => sum + (r.payout?.payout_amount || 0), 0),
-          status: 'scheduled'
+          status: auto_ach ? 'paid' : 'scheduled'
         }
       })
     };
