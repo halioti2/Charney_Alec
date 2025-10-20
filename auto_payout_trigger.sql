@@ -1,0 +1,54 @@
+-- =====================================================
+-- AUTO-PAYOUT TRIGGER SYSTEM - CURRENT VERSION DOCUMENTATION
+-- =====================================================
+-- 
+-- VERSION HISTORY:
+-- v1.0: Basic trigger system with simple RPC calls
+-- v2.0: Enhanced error handling and audit trail
+-- v3.0: Database agent lookup with hardcoded agent plans
+-- v3.1: Corrected column names (default_split_percent) - CURRENT DEPLOYED
+-- v3.2: PDF audit calculation alignment - AVAILABLE BUT NOT DEPLOYED
+--
+-- CURRENT STATUS (v3.1):
+-- ✅ Auto-payout trigger installed and working
+-- ✅ Uses correct database column names (default_split_percent)
+-- ✅ Creates payouts automatically when transactions become 'approved'
+-- ⚠️  Math discrepancy: RPC calculations don't match PDF audit view
+-- 📝 Issue: Missing commission cap logic for proper brokerage split calculation
+--
+-- KNOWN CALCULATION ISSUE (v3.1):
+-- - PDF Audit shows: $20,284.85 (with proper cap and deductions)
+-- - RPC Function shows: $20,723 (simplified calculation without cap logic)
+-- - Difference: $438.15 due to commission cap not being applied correctly
+--
+-- DEPLOYED FUNCTIONS (v3.1):
+-- - create_commission_payout_trigger() - Auto-trigger function
+-- - create_commission_payout(UUID) - Main payout creation RPC
+-- - approve_transaction_only(UUID, TEXT) - Approval without payout creation
+-- - auto_create_payout_trigger - Database trigger on transactions table
+--
+-- CALCULATION METHOD (v3.1 - CURRENT):
+-- 1. Looks up agent by final_broker_agent_name in agents table
+-- 2. Uses agent.default_split_percent for calculation
+-- 3. Simple formula: (Sale Price × Commission %) × Agent Split % - Standard Fees
+-- 4. Standard deductions: E&O Fee ($150) + Transaction Fee ($450)
+-- 5. Missing: Commission cap logic and brokerage split calculations
+--
+-- NEXT UPGRADE PATH:
+-- Deploy v3.2 (auto_payout_trigger_v3_2.sql) to fix calculation alignment with PDF audit
+-- =====================================================
+
+-- NOTE: This file documents the current deployed version (v3.1)
+-- The actual functions are deployed in the database via previous SQL execution
+-- To see current deployed functions, run:
+-- SELECT routine_name, routine_definition FROM information_schema.routines 
+-- WHERE routine_name IN ('create_commission_payout', 'create_commission_payout_trigger');
+
+-- CURRENT VERSION LIMITATIONS (v3.1):
+-- 1. Uses simplified agent split calculation
+-- 2. Doesn't implement commission cap logic
+-- 3. Missing brokerage share calculations that affect high-earning agents
+-- 4. Results in payout amounts that don't match PDF audit calculations
+
+-- UPGRADE RECOMMENDATION:
+-- Deploy auto_payout_trigger_v3_2.sql to resolve calculation discrepancies

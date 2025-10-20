@@ -160,10 +160,21 @@ export function calculateCommission(deal, plan) {
   const franchiseFee = gci * (plan.deductions.franchiseFeePct / 100);
   const adjustedGci = gci - referralFee - franchiseFee;
 
+  // COMMISSION CAP LOGIC - COMMENTED OUT FOR NOW
+  // Commission cap logic creates complexity where agents near their cap get more than their stated percentage
+  // Using simple agent split calculation instead to match RPC function v3.2
+  // const remainingCap = plan.commissionCap - plan.currentTowardsCap;
+  // const brokerageSharePreCap = adjustedGci * (plan.primarySplit.brokerage / 100);
+  // const brokerageShareToCap = Math.min(remainingCap, brokerageSharePreCap);
+  // const agentShare = adjustedGci - brokerageShareToCap;  // Cap-adjusted calculation
+  
+  // SIMPLE AGENT SPLIT CALCULATION (matches RPC v3.2)
+  const agentShare = adjustedGci * (plan.primarySplit.agent / 100);
+  
+  // Set cap variables for debugging/logging (but don't use in calculation)
   const remainingCap = plan.commissionCap - plan.currentTowardsCap;
   const brokerageSharePreCap = adjustedGci * (plan.primarySplit.brokerage / 100);
   const brokerageShareToCap = Math.min(remainingCap, brokerageSharePreCap);
-  const agentShare = adjustedGci - brokerageShareToCap;
 
   const agentNet = agentShare - plan.deductions.eoFee - plan.deductions.transactionFee;
 
